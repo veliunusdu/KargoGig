@@ -1,2 +1,2 @@
 # KargoGig
-a delivery project
+A delivery project
