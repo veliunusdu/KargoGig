@@ -8,6 +8,9 @@ import { CustomersModule } from './customers/customers.module';
 import { CompaniesModule } from './companies/companies.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { OffersModule } from './offers/offers.module';
+import { DriversModule } from './drivers/drivers.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
+import { ShipmentsModule } from './shipments/shipments.module';
 
 // env okuyabilmek için (.env path'i rootta olduğu için ona göre eklendi)
 @Module({
@@ -22,6 +25,9 @@ import { OffersModule } from './offers/offers.module';
     CompaniesModule,
     AnnouncementsModule,
     OffersModule,
+    DriversModule,
+    VehiclesModule,
+    ShipmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
