@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config';
 
 export function createSupabaseClient(config: ConfigService) {
   const url = config.get<string>('SUPABASE_URL');
-  const anonKey = config.get<string>('SUPABASE_ANON_KEY');
+  const serviceRoleKey = config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
-  if (!url || !anonKey) {
-    throw new Error('SUPABASE_URL veya SUPABASE_ANON_KEY eksik.');
+  if (!url || !serviceRoleKey) {
+    throw new Error('SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY eksik.');
   }
 
-  return createClient(url, anonKey);
+  return createClient(url, serviceRoleKey);
 }
