@@ -8,13 +8,13 @@ export class SupabaseService {
 
   constructor(private readonly config: ConfigService) {
     const url = this.config.get<string>('SUPABASE_URL');
-    const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
+    const serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!url || !anonKey) {
-      throw new Error('SUPABASE_URL veya SUPABASE_ANON_KEY eksik. .env dosyanı kontrol et.');
+    if (!url || !serviceRoleKey) {
+      throw new Error('SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY eksik. .env dosyanı kontrol et.');
     }
 
-    this.client = createClient(url, anonKey);
+    this.client = createClient(url, serviceRoleKey);
   }
 
   getClient(): SupabaseClient {
