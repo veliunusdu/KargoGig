@@ -17,7 +17,7 @@ import { ShipmentsModule } from './shipments/shipments.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../.env',
+      envFilePath: ['.env', '../.env'],
     }),
     SupabaseModule,
     ProfilesModule,
