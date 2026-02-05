@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsNumber, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsNumber,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 
 export class CreateShipmentDto {
   @IsUUID()

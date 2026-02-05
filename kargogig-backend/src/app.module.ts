@@ -20,6 +20,8 @@ import { ShipmentsModule } from './shipments/shipments.module';
 import { HealthModule } from './health/health.module';
 import { MapsModule } from './maps/maps.module';
 import { RidesModule } from './rides/rides.module';
+import { MatchingModule } from './matching/matching.module';
+
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { RidesModule } from './rides/rides.module';
     HealthModule,
     MapsModule,
     RidesModule,
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [

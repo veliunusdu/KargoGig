@@ -1,91 +1,149 @@
 import {
-    Controller,
-    Get,
-    Post,
-    Patch,
-    Body,
-    Param,
-    Query,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+  Logger,
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
+import {
+  CreateDriverDto,
+  UpdateDriverLocationDto,
+  NearbyDriversQueryDto,
+} from './dto';
 
+/**
+ * Controller for driver-related HTTP endpoints
+ * All routes are prefixed with /drivers (via global prefix: /api/v1/drivers)
+ */
 @Controller('drivers')
 export class DriversController {
-    constructor(private readonly driversService: DriversService) { }
+  private readonly logger = new Logger(DriversController.name);
 
-    /**
-     * POST /drivers
-     * Yeni sürücü kaydı
-     */
-    @Post()
-    async createDriver(
-        @Body()
-        createData: {
-            user_id: string;
-            company_id?: number;
-            license_number?: string;
-        },
-    ) {
-        return this.driversService.createDriver(createData);
-    }
+  constructor(private readonly driversService: DriversService) {}
 
-    /**
-     * GET /drivers/user/:userId
-     * User ID ile sürücü getir
-     */
-    @Get('user/:userId')
-    async getDriverByUserId(@Param('userId') userId: string) {
-        return this.driversService.getDriverByUserId(userId);
-    }
+  // ─────────────────────────────────────────────────────────────
+  // DRIVER CRUD ENDPOINTS
+  // ─────────────────────────────────────────────────────────────
 
-    /**
-     * GET /drivers/company?companyId=xxx
-     * Şirketin sürücülerini listele
-     */
-    @Get('company')
-    async getDriversByCompany(@Query('companyId') companyId: string) {
-        return this.driversService.getDriversByCompany(parseInt(companyId, 10));
-    }
+  /**
+   * POST /drivers
+   * Create a new driver record
+   */
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async createDriver(@Body() dto: CreateDriverDto) {
+    this.logger.log(`[POST /drivers] Creating driver for user: ${dto.user_id}`);
+    return this.driversService.createDriver(dto);
+  }
 
-    /**
-     * GET /drivers/:id
-     * Sürücü detayı
-     */
-    @Get(':id')
-    async getDriverById(@Param('id') id: string) {
-        return this.driversService.getDriverById(parseInt(id, 10));
-    }
+  /**
+   * GET /drivers/user/:userId
+   * Get driver by user ID
+   */
+  @Get('user/:userId')
+  async getDriverByUserId(@Param('userId') userId: string) {
+    this.logger.log(`[GET /drivers/user/${userId}] Fetching driver by user ID`);
+    return this.driversService.getDriverByUserId(userId);
+  }
 
-    /**
-     * PATCH /drivers/:id
-     * Sürücü güncelle
-     */
-    @Patch(':id')
-    async updateDriver(
-        @Param('id') id: string,
-        @Body()
-        updateData: {
-            license_number?: string;
-            availability?: string;
-            is_available?: boolean;
-            company_id?: number;
-        },
-    ) {
-        return this.driversService.updateDriver(parseInt(id, 10), updateData);
-    }
+  /**
+   * GET /drivers/company?companyId=xxx
+   * Get all drivers for a company
+   */
+  @Get('company')
+  async getDriversByCompany(@Query('companyId', ParseIntPipe) companyId: number) {
+    this.logger.log(`[GET /drivers/company] Fetching drivers for company: ${companyId}`);
+    return this.driversService.getDriversByCompany(companyId);
+  }
 
-    /**
-     * PATCH /drivers/:id/availability
-     * Müsaitlik durumu değiştir
-     */
-    @Patch(':id/availability')
-    async setAvailability(
-        @Param('id') id: string,
-        @Body() body: { is_available: boolean },
-    ) {
-        return this.driversService.setAvailability(
-            parseInt(id, 10),
-            body.is_available,
-        );
-    }
+  // ─────────────────────────────────────────────────────────────
+  // LOCATION ENDPOINTS (Day 4 Real-time Location)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * PATCH /drivers/location
+   * Update driver's own location (RLS enforced via JWT)
+   * Requires Authorization header with driver's JWT token
+   */
+  @Patch('location')
+  @HttpCode(HttpStatus.OK)
+  async updateMyLocation(
+    @Headers('authorization') authHeader: string,
+    @Body() dto: UpdateDriverLocationDto,
+  ) {
+    this.logger.log(`[PATCH /drivers/location] lat=${dto.lat}, lng=${dto.lng}`);
+    return this.driversService.upsertMyLocation(authHeader, dto);
+  }
+
+  /**
+   * GET /drivers/nearby?lat=xxx&lng=xxx&radius=xxx&limit=xxx
+   * Find nearby drivers (public endpoint, uses service role internally)
+   */
+  @Get('nearby')
+  async findNearbyDrivers(@Query() query: NearbyDriversQueryDto) {
+    this.logger.log(
+      `[GET /drivers/nearby] lat=${query.lat}, lng=${query.lng}, radius=${query.radius}, limit=${query.limit}`,
+    );
+    return this.driversService.findNearbyDrivers({
+      lat: query.lat,
+      lng: query.lng,
+      radius: query.radius,
+      limit: query.limit,
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DRIVER DETAIL & UPDATE ENDPOINTS
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * GET /drivers/:id
+   * Get driver details by ID
+   * NOTE: Must be declared AFTER /nearby to avoid route conflict
+   */
+  @Get(':id')
+  async getDriverById(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`[GET /drivers/${id}] Fetching driver by ID`);
+    return this.driversService.getDriverById(id);
+  }
+
+  /**
+   * PATCH /drivers/:id
+   * Update driver information
+   */
+  @Patch(':id')
+  async updateDriver(
+    @Param('id', ParseIntPipe) id: number,
+    @Body()
+    updateData: {
+      license_number?: string;
+      availability?: string;
+      is_available?: boolean;
+      company_id?: number;
+    },
+  ) {
+    this.logger.log(`[PATCH /drivers/${id}] Updating driver`);
+    return this.driversService.updateDriver(id, updateData);
+  }
+
+  /**
+   * PATCH /drivers/:id/availability
+   * Toggle driver availability status
+   */
+  @Patch(':id/availability')
+  async setAvailability(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { is_available: boolean },
+  ) {
+    this.logger.log(`[PATCH /drivers/${id}/availability] Setting availability: ${body.is_available}`);
+    return this.driversService.setAvailability(id, body.is_available);
+  }
 }

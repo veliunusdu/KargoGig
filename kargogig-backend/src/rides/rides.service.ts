@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MapsService } from '../maps/maps.service';
 import { EstimateRideDto } from './dto/estimate-ride.dto';
@@ -30,7 +34,8 @@ export class RidesService {
       const m = duration.match(/(\d+)/);
       if (m) return Number(m[1]);
     }
-    if (typeof duration === 'number' && Number.isFinite(duration)) return duration;
+    if (typeof duration === 'number' && Number.isFinite(duration))
+      return duration;
     return 0;
   }
 
@@ -53,7 +58,9 @@ export class RidesService {
     const durationSeconds = this.parseDurationSeconds((route as any)?.duration);
 
     if (!distanceMeters || !durationSeconds) {
-      throw new InternalServerErrorException('Route hesaplanamadı (distance/duration boş).');
+      throw new InternalServerErrorException(
+        'Route hesaplanamadı (distance/duration boş).',
+      );
     }
 
     // 2) Pricing (active, newest)
@@ -69,10 +76,14 @@ export class RidesService {
       .maybeSingle();
 
     if (error) {
-      throw new InternalServerErrorException(`Pricing fetch error: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Pricing fetch error: ${error.message}`,
+      );
     }
     if (!data) {
-      throw new BadRequestException(`company_pricing bulunamadı (company_id=${dto.companyId})`);
+      throw new BadRequestException(
+        `company_pricing bulunamadı (company_id=${dto.companyId})`,
+      );
     }
 
     const p = data as CompanyPricingRow;

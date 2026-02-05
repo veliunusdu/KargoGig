@@ -4,9 +4,9 @@ import { AnnouncementsController } from './announcements.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-    imports: [SupabaseModule],
-    controllers: [AnnouncementsController],
-    providers: [AnnouncementsService],
-    exports: [AnnouncementsService],
+  imports: [SupabaseModule],
+  controllers: [AnnouncementsController],
+  providers: [AnnouncementsService],
+  exports: [AnnouncementsService],
 })
-export class AnnouncementsModule { }
+export class AnnouncementsModule {}

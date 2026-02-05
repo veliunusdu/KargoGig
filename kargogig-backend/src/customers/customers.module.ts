@@ -4,9 +4,9 @@ import { CustomersController } from './customers.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-    imports: [SupabaseModule],
-    controllers: [CustomersController],
-    providers: [CustomersService],
-    exports: [CustomersService],
+  imports: [SupabaseModule],
+  controllers: [CustomersController],
+  providers: [CustomersService],
+  exports: [CustomersService],
 })
-export class CustomersModule { }
+export class CustomersModule {}

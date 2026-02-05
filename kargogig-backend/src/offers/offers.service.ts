@@ -1,35 +1,39 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 
 @Injectable()
 export class OffersService {
-    constructor(private readonly supabaseService: SupabaseService) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-    /**
-     * Yeni teklif oluşturur (şirket tarafından)
-     */
-    async createOffer(createDto: CreateOfferDto) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .insert(createDto)
-            .select()
-            .single();
+  /**
+   * Yeni teklif oluşturur (şirket tarafından)
+   */
+  async createOffer(createDto: CreateOfferDto) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .insert(createDto)
+      .select()
+      .single();
 
-        if (error) throw error;
-        return data;
-    }
+    if (error) throw error;
+    return data;
+  }
 
-    /**
-     * Bir ilana gelen teklifleri getirir
-     */
-    async getOffersByAnnouncement(announcementId: number) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .select(
-                `
+  /**
+   * Bir ilana gelen teklifleri getirir
+   */
+  async getOffersByAnnouncement(announcementId: number) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .select(
+        `
         *,
         companies:company_id (
           id,
@@ -37,23 +41,23 @@ export class OffersService {
           status
         )
       `,
-            )
-            .eq('announcement_id', announcementId)
-            .order('created_at', { ascending: false });
+      )
+      .eq('announcement_id', announcementId)
+      .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        return data;
-    }
+    if (error) throw error;
+    return data;
+  }
 
-    /**
-     * Şirketin verdiği teklifleri getirir
-     */
-    async getOffersByCompany(companyId: number) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .select(
-                `
+  /**
+   * Şirketin verdiği teklifleri getirir
+   */
+  async getOffersByCompany(companyId: number) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .select(
+        `
         *,
         announcements:announcement_id (
           id,
@@ -63,97 +67,97 @@ export class OffersService {
           status
         )
       `,
-            )
-            .eq('company_id', companyId)
-            .order('created_at', { ascending: false });
+      )
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        return data;
-    }
+    if (error) throw error;
+    return data;
+  }
 
-    /**
-     * Teklif detayını getirir
-     */
-    async getOfferById(id: number) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .select(
-                `
+  /**
+   * Teklif detayını getirir
+   */
+  async getOfferById(id: number) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .select(
+        `
         *,
         companies:company_id (name, email, phone),
         announcements:announcement_id (*)
       `,
-            )
-            .eq('id', id)
-            .single();
+      )
+      .eq('id', id)
+      .single();
 
-        if (error) {
-            if (error.code === 'PGRST116') {
-                throw new NotFoundException('Teklif bulunamadı');
-            }
-            throw error;
-        }
-        return data;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new NotFoundException('Teklif bulunamadı');
+      }
+      throw error;
     }
+    return data;
+  }
 
-    /**
-     * Teklifi kabul eder (müşteri tarafından)
-     * DB trigger otomatik olarak shipment oluşturacak
-     */
-    async acceptOffer(id: number) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .update({ status: 'accepted' })
-            .eq('id', id)
-            .select()
-            .single();
+  /**
+   * Teklifi kabul eder (müşteri tarafından)
+   * DB trigger otomatik olarak shipment oluşturacak
+   */
+  async acceptOffer(id: number) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .update({ status: 'accepted' })
+      .eq('id', id)
+      .select()
+      .single();
 
-        if (error) {
-            // Trigger'dan gelen hata mesajlarını yakala
-            if (error.message?.includes('pending')) {
-                throw new BadRequestException('Teklif zaten cevaplanmış');
-            }
-            throw error;
-        }
-        return data;
+    if (error) {
+      // Trigger'dan gelen hata mesajlarını yakala
+      if (error.message?.includes('pending')) {
+        throw new BadRequestException('Teklif zaten cevaplanmış');
+      }
+      throw error;
     }
+    return data;
+  }
 
-    /**
-     * Teklifi reddeder (müşteri tarafından)
-     */
-    async rejectOffer(id: number) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .update({ status: 'rejected' })
-            .eq('id', id)
-            .select()
-            .single();
+  /**
+   * Teklifi reddeder (müşteri tarafından)
+   */
+  async rejectOffer(id: number) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .update({ status: 'rejected' })
+      .eq('id', id)
+      .select()
+      .single();
 
-        if (error) {
-            if (error.message?.includes('pending')) {
-                throw new BadRequestException('Teklif zaten cevaplanmış');
-            }
-            throw error;
-        }
-        return data;
+    if (error) {
+      if (error.message?.includes('pending')) {
+        throw new BadRequestException('Teklif zaten cevaplanmış');
+      }
+      throw error;
     }
+    return data;
+  }
 
-    /**
-     * Teklifi iptal eder (şirket tarafından)
-     */
-    async cancelOffer(id: number) {
-        const { data, error } = await this.supabaseService
-            .getClient()
-            .from('offers')
-            .update({ status: 'cancelled' })
-            .eq('id', id)
-            .select()
-            .single();
+  /**
+   * Teklifi iptal eder (şirket tarafından)
+   */
+  async cancelOffer(id: number) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('offers')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+      .select()
+      .single();
 
-        if (error) throw error;
-        return data;
-    }
+    if (error) throw error;
+    return data;
+  }
 }

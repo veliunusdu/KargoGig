@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { DriversService } from './drivers.service';
 import { DriversController } from './drivers.controller';
+import { DriversService } from './drivers.service';
+import { DriversRepository } from './drivers.repository';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-    imports: [SupabaseModule],
-    controllers: [DriversController],
-    providers: [DriversService],
-    exports: [DriversService],
+  imports: [SupabaseModule],
+  controllers: [DriversController],
+  providers: [DriversService, DriversRepository],
+  exports: [DriversService, DriversRepository],
 })
-export class DriversModule { }
+export class DriversModule {}
