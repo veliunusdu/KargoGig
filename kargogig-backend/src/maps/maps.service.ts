@@ -67,7 +67,8 @@ export class MapsService {
       // locality bazen gelmez, o yüzden admin_area_level_1 fallback
       const comps = r0?.address_components ?? [];
       const locality =
-        comps.find((c: any) => c.types?.includes('locality'))?.long_name ?? null;
+        comps.find((c: any) => c.types?.includes('locality'))?.long_name ??
+        null;
       const admin1 =
         comps.find((c: any) => c.types?.includes('administrative_area_level_1'))
           ?.long_name ?? null;
@@ -140,9 +141,7 @@ export class MapsService {
     } catch (e: any) {
       // Google bazen response içine error objesi koyabiliyor
       const msg =
-        e?.response?.data?.error?.message ??
-        e?.message ??
-        'unknown error';
+        e?.response?.data?.error?.message ?? e?.message ?? 'unknown error';
 
       throw new InternalServerErrorException(`Route failed: ${msg}`);
     }

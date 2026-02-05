@@ -4,9 +4,9 @@ import { ProfilesController } from './profiles.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-    imports: [SupabaseModule],
-    controllers: [ProfilesController],
-    providers: [ProfilesService],
-    exports: [ProfilesService],
+  imports: [SupabaseModule],
+  controllers: [ProfilesController],
+  providers: [ProfilesService],
+  exports: [ProfilesService],
 })
-export class ProfilesModule { }
+export class ProfilesModule {}

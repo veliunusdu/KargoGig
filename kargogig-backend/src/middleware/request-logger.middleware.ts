@@ -4,7 +4,7 @@ import type { Request, Response, NextFunction } from 'express';
 
 /**
  * Request Logger Middleware
- * 
+ *
  * Her isteği loglar: kim, ne zaman, hangi endpoint, kaç ms, status ne?
  * JSON formatında structured logging - ELK/Sentry/DataDog uyumlu
  */
@@ -31,7 +31,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
       };
-      
+
       // Structured JSON log - sonra pino/winston ile değiştirilebilir
       console.log(JSON.stringify(log));
     });

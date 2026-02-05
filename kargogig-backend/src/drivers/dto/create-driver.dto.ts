@@ -1,27 +1,18 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
 
+/**
+ * DTO for creating a new driver
+ */
 export class CreateDriverDto {
-  @IsUUID()
-  @IsNotEmpty()
-  user_id: string;
-
-  @IsUUID()
-  @IsNotEmpty()
-  company_id: string;
-
   @IsString()
-  @IsNotEmpty()
-  full_name: string;
+  @IsNotEmpty({ message: 'user_id is required' })
+  user_id!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  license_number: string;
+  @IsNumber()
+  @IsOptional()
+  company_id?: number;
 
   @IsString()
   @IsOptional()
-  phone?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_available?: boolean;
+  license_number?: string;
 }

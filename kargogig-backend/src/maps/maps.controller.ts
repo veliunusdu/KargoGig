@@ -43,7 +43,10 @@ export class MapsController {
       origin: { lat: number; lng: number };
       destination: { lat: number; lng: number };
       travelMode?: 'DRIVE' | 'TWO_WHEELER' | 'WALK' | 'BICYCLE';
-      routingPreference?: 'TRAFFIC_AWARE' | 'TRAFFIC_AWARE_OPTIMAL' | 'ROUTING_PREFERENCE_UNSPECIFIED';
+      routingPreference?:
+        | 'TRAFFIC_AWARE'
+        | 'TRAFFIC_AWARE_OPTIMAL'
+        | 'ROUTING_PREFERENCE_UNSPECIFIED';
     },
   ) {
     if (!body?.origin || !body?.destination) {
@@ -58,7 +61,9 @@ export class MapsController {
       !Number.isFinite(destination.lat) ||
       !Number.isFinite(destination.lng)
     ) {
-      throw new BadRequestException('origin/destination lat,lng must be numbers');
+      throw new BadRequestException(
+        'origin/destination lat,lng must be numbers',
+      );
     }
 
     return this.maps.computeRoute({

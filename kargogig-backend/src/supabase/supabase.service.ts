@@ -6,53 +6,67 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 export class SupabaseService {
   private readonly url: string;
   private readonly anonKey: string;
-  private readonly adminClient: SupabaseClient;
+  private readonly serviceRoleKey: string;
+
+  private readonly anon: SupabaseClient;
+  private readonly service: SupabaseClient;
 
   constructor(private readonly config: ConfigService) {
-    const url = this.config.get<string>('SUPABASE_URL');
-    const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
-    const serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    this.url = this.config.get<string>('SUPABASE_URL') ?? '';
+    this.anonKey = this.config.get<string>('SUPABASE_ANON_KEY') ?? '';
+    this.serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-    if (!url || !anonKey || !serviceRoleKey) {
+    if (!this.url || !this.anonKey || !this.serviceRoleKey) {
       throw new Error(
         'SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY eksik. .env dosyanı kontrol et.',
       );
     }
 
-    this.url = url;
-    this.anonKey = anonKey;
+    // server-side safe (no session persistence)
+    this.anon = createClient(this.url, this.anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
-    // Admin client (RLS BYPASS) — server-side only!
-    this.adminClient = createClient(url, serviceRoleKey, {
+    this.service = createClient(this.url, this.serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }
 
-  /** Admin-only client (RLS BYPASS). */
-  admin(): SupabaseClient {
-    return this.adminClient;
+  // Preferred API
+  serviceClient(): SupabaseClient {
+    return this.service;
   }
 
-  /**
-   * Legacy compatibility:
-   * Projedeki eski servisler `.getClient()` çağırıyor olabilir.
-   * Onları kırmamak için admin client döndürüyoruz.
-   */
-  getClient(): SupabaseClient {
-    return this.adminClient;
+  anonClient(): SupabaseClient {
+    return this.anon;
   }
 
-  /** User-scoped client (RLS enforced) */
-  asUser(accessToken: string): SupabaseClient {
-    if (!accessToken) throw new Error('Missing access token');
+  anonClientWithAuth(authHeaderOrToken: string): SupabaseClient {
+    const header =
+      authHeaderOrToken?.startsWith('Bearer ')
+        ? authHeaderOrToken
+        : `Bearer ${authHeaderOrToken ?? ''}`;
 
     return createClient(this.url, this.anonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
+      global: { headers: { Authorization: header } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
+  }
+
+  // Backward compatibility (IMPORTANT)
+  getClient(): SupabaseClient {
+    return this.anonClient();
+  }
+
+  getServiceClient(): SupabaseClient {
+    return this.serviceClient();
+  }
+
+  asUser(tokenOrHeader: string): SupabaseClient {
+    return this.anonClientWithAuth(tokenOrHeader);
+  }
+
+  admin(): SupabaseClient {
+    return this.serviceClient();
   }
 }
