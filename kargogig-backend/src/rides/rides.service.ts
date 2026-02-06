@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MapsService } from '../maps/maps.service';
 import { EstimateRideDto } from './dto/estimate-ride.dto';
+import { mapRpcErrorToHttp } from '../common/utils/rpc-error.util';
 
 type CompanyPricingRow = {
   currency: string | null;
@@ -15,8 +17,25 @@ type CompanyPricingRow = {
   minimum_fare: number | string | null;
 };
 
+// RPC return types
+type CustomerCancelResult = {
+  shipment_id: number | null;
+  fee_amount: number;
+  fee_currency: string;
+  payment_id: number | null;
+};
+
+type DriverCancelResult = {
+  shipment_id: number;
+  rebroadcasted: boolean;
+  new_batch_id: number | null;
+  new_target_count: number | null;
+};
+
 @Injectable()
 export class RidesService {
+  private readonly DEFAULT_NEXT_WAVE_LIMIT = 5;
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly maps: MapsService,
@@ -119,4 +138,69 @@ export class RidesService {
       },
     };
   }
+
+  /**
+   * Customer cancels an announcement/ride.
+   * Uses user's JWT token so auth.uid() works in RPC.
+   */
+  async customerCancel(
+    announcementId: number,
+    reason: string | null,
+    authHeader: string,
+  ): Promise<{ ok: true; result: CustomerCancelResult }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    // Create client with user's JWT token -> auth.uid() will be set
+    const sb = this.supabase.asUser(authHeader);
+
+    const { data, error } = await sb.rpc('customer_cancel_announcement', {
+      p_announcement_id: announcementId,
+      p_reason: reason,
+    });
+
+    if (error) {
+      throw mapRpcErrorToHttp(error);
+    }
+
+    // RPC returns a single row or array of rows
+    const result = Array.isArray(data) ? data[0] : data;
+
+    return { ok: true, result };
+  }
+
+  /**
+   * Driver cancels their assignment for an announcement/ride.
+   * Triggers unassign + potential rebroadcast.
+   * Uses user's JWT token so auth.uid() works in RPC.
+   */
+  async driverCancel(
+    announcementId: number,
+    reason: string,
+    authHeader: string,
+  ): Promise<{ ok: true; result: DriverCancelResult }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    // Create client with user's JWT token -> auth.uid() will be set
+    const sb = this.supabase.asUser(authHeader);
+
+    const { data, error } = await sb.rpc('driver_cancel_assignment', {
+      p_announcement_id: announcementId,
+      p_reason: reason,
+      p_next_wave_limit: this.DEFAULT_NEXT_WAVE_LIMIT,
+    });
+
+    if (error) {
+      throw mapRpcErrorToHttp(error);
+    }
+
+    // RPC returns a single row or array of rows
+    const result = Array.isArray(data) ? data[0] : data;
+
+    return { ok: true, result };
+  }
 }
+
