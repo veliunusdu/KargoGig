@@ -11,12 +11,15 @@ import {
   HttpStatus,
   ParseIntPipe,
   Logger,
+  Req,
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import {
   CreateDriverDto,
   UpdateDriverLocationDto,
   NearbyDriversQueryDto,
+  GoOnlineDto,
+  GoOfflineDto,
 } from './dto';
 
 /**
@@ -145,5 +148,41 @@ export class DriversController {
   ) {
     this.logger.log(`[PATCH /drivers/${id}/availability] Setting availability: ${body.is_available}`);
     return this.driversService.setAvailability(id, body.is_available);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SESSION MANAGEMENT (Day 5)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * POST /drivers/go-online
+   * Mark driver as online and create/update session
+   * Requires Authorization header with driver's JWT token
+   */
+  @Post('go-online')
+  @HttpCode(HttpStatus.OK)
+  async goOnline(
+    @Body() dto: GoOnlineDto,
+    @Req() req: any,
+  ) {
+    const authHeader = req.headers['authorization'] as string | undefined;
+    this.logger.log(`[POST /drivers/go-online] device_type=${dto.device_type || 'unknown'}`);
+    return this.driversService.goOnline(authHeader, dto);
+  }
+
+  /**
+   * POST /drivers/go-offline
+   * Mark driver as offline
+   * Requires Authorization header with driver's JWT token
+   */
+  @Post('go-offline')
+  @HttpCode(HttpStatus.OK)
+  async goOffline(
+    @Body() dto: GoOfflineDto,
+    @Req() req: any,
+  ) {
+    const authHeader = req.headers['authorization'] as string | undefined;
+    this.logger.log(`[POST /drivers/go-offline] device_type=${dto.device_type || 'unknown'}`);
+    return this.driversService.goOffline(authHeader, dto);
   }
 }

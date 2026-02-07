@@ -225,4 +225,90 @@ export class DriversService {
       distance_m: Number(row.distance_m),
     }));
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // SESSION MANAGEMENT (Day 5)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Mark driver as online and create/update session
+   */
+  async goOnline(
+    authHeader: string | undefined,
+    dto: { device_type?: string; device_token?: string },
+  ): Promise<{ ok: boolean; driver_id: number; is_online: boolean }> {
+    const token = authHeader?.replace('Bearer ', '');
+    if (!token) {
+      throw new UnauthorizedException('Authorization header eksik veya geçersiz');
+    }
+
+    this.logger.log(
+      `[goOnline] device_type=${dto.device_type || 'unknown'}, has_token=${!!dto.device_token}`,
+    );
+
+    const { data, error } = await this.driversRepository.goOnline(
+      token,
+      dto.device_type || 'unknown',
+      dto.device_token || null,
+    );
+
+    if (error) {
+      this.logger.error(`[goOnline] RPC error: ${error.message}`);
+
+      // Map specific errors
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('not a driver')) {
+        throw new HttpException('Not a driver', HttpStatus.FORBIDDEN);
+      }
+      if (msg.includes('not approved')) {
+        throw new HttpException('Driver not approved', HttpStatus.CONFLICT);
+      }
+
+      throw new HttpException(
+        `Failed to go online: ${error.message}`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+
+    this.logger.log(`[goOnline] Success: driver_id=${data?.driver_id}`);
+    return data!;
+  }
+
+  /**
+   * Mark driver as offline
+   */
+  async goOffline(
+    authHeader: string | undefined,
+    dto: { device_type?: string },
+  ): Promise<{ ok: boolean; driver_id: number; is_online: boolean }> {
+    const token = authHeader?.replace('Bearer ', '');
+    if (!token) {
+      throw new UnauthorizedException('Authorization header eksik veya geçersiz');
+    }
+
+    this.logger.log(`[goOffline] device_type=${dto.device_type || 'unknown'}`);
+
+    const { data, error } = await this.driversRepository.goOffline(
+      token,
+      dto.device_type || 'unknown',
+    );
+
+    if (error) {
+      this.logger.error(`[goOffline] RPC error: ${error.message}`);
+
+      // Map specific errors
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('not a driver')) {
+        throw new HttpException('Not a driver', HttpStatus.FORBIDDEN);
+      }
+
+      throw new HttpException(
+        `Failed to go offline: ${error.message}`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+
+    this.logger.log(`[goOffline] Success: driver_id=${data?.driver_id}`);
+    return data!;
+  }
 }

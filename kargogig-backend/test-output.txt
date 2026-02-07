@@ -1,0 +1,104 @@
+﻿node.exe : FAIL test/cancella
+tion.e2e-spec.ts (5.401 s)
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\Us
+ers\veliu\AppData\Roaming\ 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (FAIL te  
+  st/cance...ec.ts (5.401    
+ s):String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+  Ride Cancellation (e2e)
+    Authentication & 
+Authorization
+      × should return 401 
+for customer cancel without 
+auth header
+      × should return 401 
+for driver cancel without 
+auth header
+      × should return 400 
+for driver cancel when 
+missing required reason
+    Test A: Customer cancel 
+announcement
+      × should call 
+customer_cancel_announcement 
+RPC (1 ms)
+    Test C: Driver cancel 
+assignment
+      × should call 
+driver_cancel_assignment RPC
+
+  ● Ride Cancellation (e2e) 
+› Authentication & 
+Authorization › should 
+return 401 for customer 
+cancel without auth header
+
+    new row violates 
+row-level security policy 
+for table "drivers"
+
+
+  ● Ride Cancellation (e2e) 
+› Authentication & 
+Authorization › should 
+return 401 for driver cancel 
+without auth header
+
+    new row violates 
+row-level security policy 
+for table "drivers"
+
+
+  ● Ride Cancellation (e2e) 
+› Authentication & 
+Authorization › should 
+return 400 for driver cancel 
+when missing required reason
+
+    new row violates 
+row-level security policy 
+for table "drivers"
+
+
+  ● Ride Cancellation (e2e) 
+› Test A: Customer cancel 
+announcement › should call 
+customer_cancel_announcement 
+RPC
+
+    new row violates 
+row-level security policy 
+for table "drivers"
+
+
+  ● Ride Cancellation (e2e) 
+› Test C: Driver cancel 
+assignment › should call 
+driver_cancel_assignment RPC
+
+    new row violates 
+row-level security policy 
+for table "drivers"
+
+
+Test Suites: 1 failed, 1 
+total
+Tests:       5 failed, 5 
+total
+Snapshots:   0 total
+Time:        5.644 s, 
+estimated 7 s
+Ran all test suites matching 
+test/cancellation.e2e-spec.ts
+.
