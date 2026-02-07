@@ -13,6 +13,7 @@ import { AppModule } from '../src/app.module';
 describe('Ride Cancellation (e2e)', () => {
   let app: INestApplication;
   let supabaseAdmin: SupabaseClient;
+  let sbAnon: SupabaseClient; // Login only — never use for seed
 
   // Strict mode for CI
   const STRICT_MODE = process.env.E2E_STRICT_DB === 'true';
@@ -31,7 +32,7 @@ describe('Ride Cancellation (e2e)', () => {
   let driverToken: string | null = null;
 
   async function getToken(email: string, password: string): Promise<string> {
-    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+    const { data, error } = await sbAnon.auth.signInWithPassword({
       email,
       password,
     });
@@ -133,6 +134,11 @@ describe('Ride Cancellation (e2e)', () => {
     if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    const anonKey = process.env.SUPABASE_ANON_KEY!;
+    sbAnon = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 

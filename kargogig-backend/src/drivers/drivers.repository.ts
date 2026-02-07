@@ -172,6 +172,58 @@ export class DriversRepository {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // SESSION MANAGEMENT (Day 5)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Mark driver as online (RLS enforced)
+   * Uses user's JWT token for authentication
+   */
+  async goOnline(
+    token: string,
+    deviceType: string,
+    deviceToken: string | null,
+  ): Promise<{ data: { ok: boolean; driver_id: number; is_online: boolean } | null; error: Error | null }> {
+    this.logger.log(`[goOnline] device_type=${deviceType}, has_token=${!!deviceToken}`);
+
+    const userClient = this.getUserClient(token);
+
+    const { data, error } = await userClient.rpc('driver_go_online', {
+      p_device_type: deviceType,
+      p_device_token: deviceToken,
+    });
+
+    this.logger.log(
+      `[goOnline] RPC result: success=${!error}, error=${error?.message ?? 'none'}`,
+    );
+
+    return { data, error };
+  }
+
+  /**
+   * Mark driver as offline (RLS enforced)
+   * Uses user's JWT token for authentication
+   */
+  async goOffline(
+    token: string,
+    deviceType: string,
+  ): Promise<{ data: { ok: boolean; driver_id: number; is_online: boolean } | null; error: Error | null }> {
+    this.logger.log(`[goOffline] device_type=${deviceType}`);
+
+    const userClient = this.getUserClient(token);
+
+    const { data, error } = await userClient.rpc('driver_go_offline', {
+      p_device_type: deviceType,
+    });
+
+    this.logger.log(
+      `[goOffline] RPC result: success=${!error}, error=${error?.message ?? 'none'}`,
+    );
+
+    return { data, error };
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // DEBUG HELPERS (temporary)
   // ─────────────────────────────────────────────────────────────
 

@@ -16,6 +16,13 @@ export class SupabaseService {
     this.anonKey = this.config.get<string>('SUPABASE_ANON_KEY') ?? '';
     this.serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+    // Debug ENV loading (especially for E2E tests)
+    console.log('[SUPABASE]', {
+      url: this.url ? 'ok' : 'missing',
+      anonLen: this.anonKey?.length ?? 0,
+      serviceLen: this.serviceRoleKey?.length ?? 0,
+    });
+
     if (!this.url || !this.anonKey || !this.serviceRoleKey) {
       throw new Error(
         'SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY eksik. .env dosyanı kontrol et.',

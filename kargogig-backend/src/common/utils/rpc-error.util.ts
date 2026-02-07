@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { PostgrestError } from '@supabase/supabase-js';
 
@@ -54,11 +55,35 @@ export function mapRpcErrorToHttp(error: PostgrestError | null): HttpException {
     return new NotFoundException(error.message);
   }
 
+  // 422 Unprocessable Entity (geo-fence failures, location issues)
+  if (
+    msg.includes('geo-fence failed') ||
+    msg.includes('geofence failed') ||
+    msg.includes('too far from pickup') ||
+    msg.includes('too far from dropoff') ||
+    msg.includes('driver location missing') ||
+    msg.includes('location not available') ||
+    msg.includes('invalid coordinates') ||
+    msg.includes('invalid lat') ||
+    msg.includes('invalid lng')
+  ) {
+    return new UnprocessableEntityException(error.message);
+  }
+
   // 409 Conflict (state conflict)
   if (
     msg.includes('cannot cancel after pickup') ||
     msg.includes('cannot cancel after in_transit') ||
     msg.includes('already cancelled') ||
+    msg.includes('already arrived') ||
+    msg.includes('already started') ||
+    msg.includes('already completed') ||
+    msg.includes('cannot start: not arrived') ||
+    msg.includes('cannot complete: not in progress') ||
+    msg.includes('must arrive before starting') ||
+    msg.includes('not in progress') ||
+    msg.includes('shipment not in progress') ||
+    msg.includes('ride not active') ||
     msg.includes('invalid state') ||
     msg.includes('state conflict') ||
     details.includes('conflict')

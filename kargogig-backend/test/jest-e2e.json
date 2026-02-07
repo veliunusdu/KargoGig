@@ -8,6 +8,7 @@
   },
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1"
-  }
+  },
+  "setupFiles": ["<rootDir>/jest.env.ts"]
 }
 

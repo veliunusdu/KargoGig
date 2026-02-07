@@ -6,7 +6,9 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MapsService } from '../maps/maps.service';
+import { PaymentsService } from '../payments/payments.service';
 import { EstimateRideDto } from './dto/estimate-ride.dto';
+import { CompleteRideDto } from './dto/complete-ride.dto';
 import { mapRpcErrorToHttp } from '../common/utils/rpc-error.util';
 
 type CompanyPricingRow = {
@@ -32,6 +34,36 @@ type DriverCancelResult = {
   new_target_count: number | null;
 };
 
+type DriverArriveResult = {
+  shipment_id: number;
+  status: string;
+  arrived_at: string;
+  wait_started_at: string;
+};
+
+type DriverStartResult = {
+  shipment_id: number;
+  status: string;
+  picked_up_at: string;
+  wait_ended_at: string | null;
+};
+
+type LocationUpdateResult = {
+  shipment_id: number;
+  inserted: boolean;
+  eta_seconds: number | null;
+  distance_remaining_meters: number | null;
+};
+
+type CompleteRideResult = {
+  id: number;
+  status: string;
+  delivered_at: string;
+  final_price: number;
+  pod_signature: string | null;
+  pod_photos: string[] | null;
+};
+
 @Injectable()
 export class RidesService {
   private readonly DEFAULT_NEXT_WAVE_LIMIT = 5;
@@ -39,6 +71,7 @@ export class RidesService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly maps: MapsService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   private toNumber(v: unknown, fallback = 0): number {
@@ -201,6 +234,162 @@ export class RidesService {
     const result = Array.isArray(data) ? data[0] : data;
 
     return { ok: true, result };
+  }
+
+  /**
+   * Driver marks arrival at the pickup location.
+   * Calls the driver_arrive_ride RPC which:
+   *  - validates the driver owns this shipment
+   *  - sets status='arrived', arrived_at=now(), wait_started_at=now()
+   *  - creates a notification for the customer
+   * Uses user's JWT token so auth.uid() works in RPC.
+   */
+  async arrive(
+    shipmentId: number,
+    authHeader: string,
+  ): Promise<{ ok: true; ride: DriverArriveResult }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const sb = this.supabase.asUser(authHeader);
+
+    const { data, error } = await sb.rpc('driver_arrive_ride', {
+      p_shipment_id: shipmentId,
+    });
+
+    if (error) {
+      throw mapRpcErrorToHttp(error);
+    }
+
+    const ride = Array.isArray(data) ? data[0] : data;
+
+    return { ok: true, ride };
+  }
+
+  /**
+   * Driver starts the ride (picks up cargo).
+   * Calls the driver_start_ride RPC which:
+   *  - validates the driver owns this shipment
+   *  - validates status = 'arrived' (must arrive before starting)
+   *  - validates geo-fence (driver must be within radius of pickup location)
+   *  - sets status='in_progress', picked_up_at=now(), wait_ended_at=now()
+   *  - creates a notification for the customer
+   * Uses user's JWT token so auth.uid() works in RPC.
+   */
+  async start(
+    shipmentId: number,
+    authHeader: string,
+  ): Promise<{ ok: true; ride: DriverStartResult }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const sb = this.supabase.asUser(authHeader);
+
+    const { data, error } = await sb.rpc('driver_start_ride', {
+      p_shipment_id: shipmentId,
+    });
+
+    if (error) {
+      throw mapRpcErrorToHttp(error);
+    }
+
+    const ride = Array.isArray(data) ? data[0] : data;
+
+    return { ok: true, ride };
+  }
+
+  /**
+   * Driver updates their location during an active ride.
+   * Calls the driver_update_ride_location RPC which:
+   *  - validates the driver owns this shipment
+   *  - validates status = 'in_progress' (must be actively driving)
+   *  - updates driver_locations table
+   *  - inserts into shipment_tracking (rate-limited to avoid spam)
+   *  - calculates ETA based on remaining distance
+   * Uses user's JWT token so auth.uid() works in RPC.
+   */
+  async updateLocation(
+    shipmentId: number,
+    lat: number,
+    lng: number,
+    authHeader: string,
+  ): Promise<{ ok: true; result: LocationUpdateResult }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const sb = this.supabase.asUser(authHeader);
+
+    const { data, error } = await sb.rpc('driver_update_ride_location', {
+      p_shipment_id: shipmentId,
+      p_lat: lat,
+      p_lng: lng,
+    });
+
+    if (error) {
+      throw mapRpcErrorToHttp(error);
+    }
+
+    const result = Array.isArray(data) ? data[0] : data;
+
+    return { ok: true, result };
+  }
+
+  /**
+   * Driver completes the delivery at dropoff location.
+   * Calls the driver_complete_ride RPC which:
+   *  - validates the driver owns this shipment
+   *  - validates status = 'in_progress' (must be actively delivering)
+   *  - validates geo-fence (driver must be within radius of dropoff location)
+   *  - calculates final price based on actual distance/duration and company pricing
+   *  - sets status='completed', delivered_at=now(), final_price
+   *  - optionally stores POD (signature + photos)
+   *  - creates a notification for the customer
+   * Uses user's JWT token so auth.uid() works in RPC.
+   */
+  async complete(
+    shipmentId: number,
+    dto: CompleteRideDto,
+    authHeader: string,
+  ): Promise<{ ok: true; ride: CompleteRideResult }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const sb = this.supabase.asUser(authHeader);
+
+    const { data, error } = await sb.rpc('driver_complete_ride', {
+      p_shipment_id: shipmentId,
+      p_lat: dto.lat,
+      p_lng: dto.lng,
+      p_pod_signature: dto.pod_signature ?? null,
+      p_pod_photos: dto.pod_photos ?? null,
+    });
+
+    if (error) {
+      throw mapRpcErrorToHttp(error);
+    }
+
+    const ride = Array.isArray(data) ? data[0] : data;
+
+    return { ok: true, ride };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // PAYMENT (Day 2 — POST /rides/:id/pay)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Initiate payment for a completed ride.
+   * Delegates to PaymentsService for all payment logic.
+   */
+  async pay(shipmentId: number, authHeader?: string) {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header is required');
+    }
+    return this.paymentsService.createCheckoutForShipment(shipmentId, authHeader);
   }
 }
 

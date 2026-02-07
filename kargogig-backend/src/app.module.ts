@@ -21,6 +21,7 @@ import { HealthModule } from './health/health.module';
 import { MapsModule } from './maps/maps.module';
 import { RidesModule } from './rides/rides.module';
 import { MatchingModule } from './matching/matching.module';
+import { PaymentsModule } from './payments/payments.module';
 
 
 @Module({
@@ -57,6 +58,7 @@ import { MatchingModule } from './matching/matching.module';
     MapsModule,
     RidesModule,
     MatchingModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [
