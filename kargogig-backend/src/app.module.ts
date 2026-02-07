@@ -22,6 +22,8 @@ import { MapsModule } from './maps/maps.module';
 import { RidesModule } from './rides/rides.module';
 import { MatchingModule } from './matching/matching.module';
 import { PaymentsModule } from './payments/payments.module';
+import { RefundsModule } from './refunds/refunds.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 @Module({
@@ -59,6 +61,8 @@ import { PaymentsModule } from './payments/payments.module';
     RidesModule,
     MatchingModule,
     PaymentsModule,
+    RefundsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

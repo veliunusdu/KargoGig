@@ -9,11 +9,13 @@ import {
   HttpStatus,
   Req,
   Res,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { PaymentsService } from './payments.service';
 import { CreateCheckoutDto } from './dto/checkout.dto';
-import { PaymentCallbackDto } from './dto/callback.dto';
+import { SkipThrottle } from '@nestjs/throttler';
 
 /**
  * Payments controller - handles checkout and callback endpoints
@@ -39,12 +41,18 @@ export class PaymentsController {
   /**
    * POST /payments/callback/:provider
    * Process payment callback from provider (mock, shopier, etc.)
+   *
+   * Shopier sends form-urlencoded with extra fields we don't control,
+   * so we disable whitelist validation and accept raw body.
+   * Rate-limit is skipped because this is a server-to-server webhook.
    */
   @Post('callback/:provider')
   @HttpCode(HttpStatus.OK)
-  async processCallback(@Param('provider') provider: string, @Body() dto: PaymentCallbackDto) {
+  @SkipThrottle()
+  @UsePipes(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true }))
+  async processCallback(@Param('provider') provider: string, @Body() body: any) {
     this.logger.log(`[POST /payments/callback/${provider}]`);
-    return this.paymentsService.processCallback(provider, dto);
+    return this.paymentsService.processCallback(provider, body);
   }
 }
 

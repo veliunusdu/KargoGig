@@ -5,10 +5,14 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OffersService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Yeni teklif oluşturur (şirket tarafından)
@@ -121,6 +125,29 @@ export class OffersService {
       }
       throw error;
     }
+
+    // Trigger oluşturduğu shipment'ı bul ve notification gönder
+    try {
+      const { data: shipment } = await this.supabaseService
+        .getClient()
+        .from('shipments')
+        .select('id, customer_id, driver_id')
+        .eq('offer_id', id)
+        .single();
+
+      if (shipment && shipment.customer_id && shipment.driver_id) {
+        // Async notification (don't block response)
+        this.notificationsService
+          .onShipmentAccepted(shipment.id, shipment.customer_id, shipment.driver_id)
+          .catch((err) => {
+            console.error('[OffersService] Notification failed:', err);
+          });
+      }
+    } catch (notifError) {
+      // Log but don't fail the request
+      console.error('[OffersService] Failed to send notification:', notifError);
+    }
+
     return data;
   }
 

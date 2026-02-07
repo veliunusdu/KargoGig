@@ -4,6 +4,7 @@ import { EstimateRideDto } from './dto/estimate-ride.dto';
 import { CustomerCancelDto, DriverCancelDto } from './dto/cancel-ride.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { CompleteRideDto } from './dto/complete-ride.dto';
+import { RateRideDto } from './dto/rate-ride.dto';
 
 
 @Controller('rides')
@@ -131,5 +132,22 @@ export class RidesController {
     @Headers('authorization') authHeader: string,
   ) {
     return this.ridesService.pay(parseInt(id, 10), authHeader);
+  }
+
+  /**
+   * POST /rides/:id/rate
+   * Customer rates a completed ride (driver + company).
+   * Inserts into ride_ratings table, triggers update averages.
+   * Idempotent: duplicate ratings (same customer, same target) are silently ignored.
+   * Requires customer's JWT token.
+   */
+  @Post(':id/rate')
+  @HttpCode(HttpStatus.CREATED)
+  async rate(
+    @Param('id') id: string,
+    @Body() dto: RateRideDto,
+    @Headers('authorization') authHeader: string,
+  ) {
+    return this.ridesService.rate(parseInt(id, 10), dto, authHeader);
   }
 }

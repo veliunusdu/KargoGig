@@ -35,5 +35,7 @@ export interface PaymentProvider {
     platformOrderId: string;
     providerPaymentId?: string;
     status: 'paid' | 'failed';
+    signatureValid?: boolean;
+    installment?: number;
   }>;
 }

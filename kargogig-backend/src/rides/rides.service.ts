@@ -7,8 +7,10 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { MapsService } from '../maps/maps.service';
 import { PaymentsService } from '../payments/payments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { EstimateRideDto } from './dto/estimate-ride.dto';
 import { CompleteRideDto } from './dto/complete-ride.dto';
+import { RateRideDto } from './dto/rate-ride.dto';
 import { mapRpcErrorToHttp } from '../common/utils/rpc-error.util';
 
 type CompanyPricingRow = {
@@ -72,6 +74,7 @@ export class RidesService {
     private readonly supabase: SupabaseService,
     private readonly maps: MapsService,
     private readonly paymentsService: PaymentsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private toNumber(v: unknown, fallback = 0): number {
@@ -264,6 +267,23 @@ export class RidesService {
 
     const ride = Array.isArray(data) ? data[0] : data;
 
+    // Notification: Driver arrived at pickup
+    try {
+      const { data: shipment } = await this.supabase.getClient()
+        .from('shipments')
+        .select('customer_id')
+        .eq('id', shipmentId)
+        .single();
+
+      if (shipment?.customer_id) {
+        this.notificationsService
+          .onShipmentArrived(shipmentId, shipment.customer_id)
+          .catch((err) => console.error('[RidesService] Notification failed:', err));
+      }
+    } catch (notifError) {
+      console.error('[RidesService] Failed to send notification:', notifError);
+    }
+
     return { ok: true, ride };
   }
 
@@ -296,6 +316,23 @@ export class RidesService {
     }
 
     const ride = Array.isArray(data) ? data[0] : data;
+
+    // Notification: Cargo picked up
+    try {
+      const { data: shipment } = await this.supabase.getClient()
+        .from('shipments')
+        .select('customer_id')
+        .eq('id', shipmentId)
+        .single();
+
+      if (shipment?.customer_id) {
+        this.notificationsService
+          .onShipmentStarted(shipmentId, shipment.customer_id)
+          .catch((err) => console.error('[RidesService] Notification failed:', err));
+      }
+    } catch (notifError) {
+      console.error('[RidesService] Failed to send notification:', notifError);
+    }
 
     return { ok: true, ride };
   }
@@ -374,6 +411,23 @@ export class RidesService {
 
     const ride = Array.isArray(data) ? data[0] : data;
 
+    // Notification: Cargo delivered
+    try {
+      const { data: shipment } = await this.supabase.getClient()
+        .from('shipments')
+        .select('customer_id')
+        .eq('id', shipmentId)
+        .single();
+
+      if (shipment?.customer_id) {
+        this.notificationsService
+          .onShipmentCompleted(shipmentId, shipment.customer_id)
+          .catch((err) => console.error('[RidesService] Notification failed:', err));
+      }
+    } catch (notifError) {
+      console.error('[RidesService] Failed to send notification:', notifError);
+    }
+
     return { ok: true, ride };
   }
 
@@ -390,6 +444,105 @@ export class RidesService {
       throw new UnauthorizedException('Authorization header is required');
     }
     return this.paymentsService.createCheckoutForShipment(shipmentId, authHeader);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // RATING (Day 7 — POST /rides/:id/rate)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Rate a completed ride (driver + company).
+   * Flow:
+   *   1. Find ride → check completed
+   *   2. Get driver_id, company_id
+   *   3. Insert ride_ratings (target=driver) if driver_rating provided
+   *   4. Insert ride_ratings (target=company) if company_rating provided
+   *   5. Triggers automatically update averages (drivers.rating, companies.rating_avg)
+   */
+  async rate(
+    shipmentId: number,
+    dto: RateRideDto,
+    authHeader?: string,
+  ): Promise<{ ok: boolean; inserted: number }> {
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header is required');
+    }
+
+    // Validate at least one rating provided
+    if (!dto.driver_rating && !dto.company_rating) {
+      throw new BadRequestException('At least one rating (driver or company) is required');
+    }
+
+    // Use user token for RLS
+    const sb = this.supabase.asUser(authHeader);
+
+    // 1) Find shipment and verify it's completed
+    const { data: shipment, error: shipmentError } = await sb
+      .from('shipments')
+      .select('id, status, driver_id, company_id, customer_id')
+      .eq('id', shipmentId)
+      .single();
+
+    if (shipmentError || !shipment) {
+      throw new BadRequestException('Shipment not found');
+    }
+
+    if (shipment.status !== 'completed') {
+      throw new BadRequestException(
+        `Cannot rate shipment: status is '${shipment.status}', must be 'completed'`,
+      );
+    }
+
+    let inserted = 0;
+
+    // 2) Insert driver rating if provided
+    if (dto.driver_rating && shipment.driver_id) {
+      const { error: driverError } = await sb.from('ride_ratings').insert({
+        shipment_id: shipmentId,
+        customer_id: shipment.customer_id,
+        target_type: 'driver',
+        target_id: shipment.driver_id,
+        rating: dto.driver_rating,
+        comment: dto.comment || null,
+      });
+
+      // UNIQUE constraint (shipment_id, customer_id, target_type, target_id) → idempotent
+      if (driverError) {
+        // 23505 = duplicate key (idempotent, already rated)
+        if (driverError.code !== '23505') {
+          throw new InternalServerErrorException(
+            `Failed to insert driver rating: ${driverError.message}`,
+          );
+        }
+      } else {
+        inserted++;
+      }
+    }
+
+    // 3) Insert company rating if provided
+    if (dto.company_rating && shipment.company_id) {
+      const { error: companyError } = await sb.from('ride_ratings').insert({
+        shipment_id: shipmentId,
+        customer_id: shipment.customer_id,
+        target_type: 'company',
+        target_id: shipment.company_id,
+        rating: dto.company_rating,
+        comment: dto.comment || null,
+      });
+
+      // UNIQUE constraint → idempotent
+      if (companyError) {
+        if (companyError.code !== '23505') {
+          throw new InternalServerErrorException(
+            `Failed to insert company rating: ${companyError.message}`,
+          );
+        }
+      } else {
+        inserted++;
+      }
+    }
+
+    return { ok: true, inserted };
   }
 }
 
