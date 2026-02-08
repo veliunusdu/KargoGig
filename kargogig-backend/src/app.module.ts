@@ -24,6 +24,7 @@ import { MatchingModule } from './matching/matching.module';
 import { PaymentsModule } from './payments/payments.module';
 import { RefundsModule } from './refunds/refunds.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DocumentsModule } from './documents/documents.module';
 
 
 @Module({
@@ -63,6 +64,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     PaymentsModule,
     RefundsModule,
     NotificationsModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [
