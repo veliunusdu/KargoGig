@@ -1,0 +1,17 @@
+{
+  "name": "@kargogig/config",
+  "version": "0.1.0",
+  "description": "Shared configuration files for KargoGig monorepo",
+  "main": "index.js",
+  "files": [
+    "eslint",
+    "typescript",
+    "prettier"
+  ],
+  "keywords": [
+    "config",
+    "eslint",
+    "typescript",
+    "prettier"
+  ]
+}

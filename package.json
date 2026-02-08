@@ -1,12 +1,30 @@
 {
-  "dependencies": {
-    "@nestjs/axios": "^4.0.1",
-    "@nestjs/throttler": "^6.5.0",
-    "@supabase/supabase-js": "^2.94.0",
-    "stripe": "^20.3.1"
+  "name": "kargogig-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "dev:customer": "npm run dev -w apps/web-customer",
+    "dev:company": "npm run dev -w apps/web-company",
+    "dev:admin": "npm run dev -w apps/admin",
+    "dev:backend": "npm run dev -w services/backend"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "@types/supertest": "^6.0.3",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }

@@ -1,6 +1,0 @@
-﻿{
-  "origin": { "location": { "latLng": { "latitude": 41.0082, "longitude": 28.9784 } } },
-  "destination": { "location": { "latLng": { "latitude": 40.9917, "longitude": 29.0287 } } },
-  "travelMode": "DRIVE",
-  "routingPreference": "TRAFFIC_AWARE"
-}
