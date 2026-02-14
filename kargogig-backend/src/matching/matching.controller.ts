@@ -28,10 +28,13 @@ export class MatchingController {
     const radius = radiusMeters ? Number(radiusMeters) : 5000;
     const lim = limit ? Number(limit) : 20;
 
-    const result = await this.matchingService.matchAnnouncement(announcementId, {
-      radius_meters: Number.isFinite(radius) ? radius : 5000,
-      limit: Number.isFinite(lim) ? lim : 20,
-    });
+    const result = await this.matchingService.matchAnnouncement(
+      announcementId,
+      {
+        radius_meters: Number.isFinite(radius) ? radius : 5000,
+        limit: Number.isFinite(lim) ? lim : 20,
+      },
+    );
 
     return {
       ok: true,

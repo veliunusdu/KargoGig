@@ -43,9 +43,12 @@ export class NotificationsRepository {
     platform: string,
     deviceId?: string,
   ): Promise<{ data: UserPushToken | null; error: any }> {
-    this.logger.log(`[upsertPushToken] user_id=${userId}, token=${token.slice(0, 20)}...`);
+    this.logger.log(
+      `[upsertPushToken] user_id=${userId}, token=${token.slice(0, 20)}...`,
+    );
 
-    const { data, error } = await this.supabase.getClient()
+    const { data, error } = await this.supabase
+      .getClient()
       .from('user_push_tokens')
       .upsert(
         {
@@ -70,8 +73,11 @@ export class NotificationsRepository {
   /**
    * Get all active push tokens for a user.
    */
-  async getActiveTokensByUserId(userId: string): Promise<{ data: string[]; error: any }> {
-    const { data, error } = await this.supabase.getClient()
+  async getActiveTokensByUserId(
+    userId: string,
+  ): Promise<{ data: string[]; error: any }> {
+    const { data, error } = await this.supabase
+      .getClient()
       .from('user_push_tokens')
       .select('token')
       .eq('user_id', userId)
@@ -88,9 +94,12 @@ export class NotificationsRepository {
   async markTokensInactive(tokens: string[]): Promise<{ error: any }> {
     if (tokens.length === 0) return { error: null };
 
-    this.logger.warn(`[markTokensInactive] Marking ${tokens.length} tokens as inactive`);
+    this.logger.warn(
+      `[markTokensInactive] Marking ${tokens.length} tokens as inactive`,
+    );
 
-    const { error } = await this.supabase.getClient()
+    const { error } = await this.supabase
+      .getClient()
       .from('user_push_tokens')
       .update({ is_active: false })
       .in('token', tokens);
@@ -109,9 +118,12 @@ export class NotificationsRepository {
     reference_type?: string;
     reference_id?: number;
   }): Promise<{ data: Notification | null; error: any }> {
-    this.logger.log(`[insertNotification] user_id=${data.user_id}, type=${data.type}`);
+    this.logger.log(
+      `[insertNotification] user_id=${data.user_id}, type=${data.type}`,
+    );
 
-    const { data: notification, error } = await this.supabase.getClient()
+    const { data: notification, error } = await this.supabase
+      .getClient()
       .from('notifications')
       .insert(data)
       .select()
@@ -123,8 +135,11 @@ export class NotificationsRepository {
   /**
    * Get user ID by customer ID (for notification targeting).
    */
-  async getUserIdByCustomerId(customerId: number): Promise<{ data: string | null; error: any }> {
-    const { data, error } = await this.supabase.getClient()
+  async getUserIdByCustomerId(
+    customerId: number,
+  ): Promise<{ data: string | null; error: any }> {
+    const { data, error } = await this.supabase
+      .getClient()
       .from('customers')
       .select('user_id')
       .eq('id', customerId)
@@ -136,8 +151,11 @@ export class NotificationsRepository {
   /**
    * Get user ID by driver ID (for notification targeting).
    */
-  async getUserIdByDriverId(driverId: number): Promise<{ data: string | null; error: any }> {
-    const { data, error } = await this.supabase.getClient()
+  async getUserIdByDriverId(
+    driverId: number,
+  ): Promise<{ data: string | null; error: any }> {
+    const { data, error } = await this.supabase
+      .getClient()
       .from('drivers')
       .select('user_id')
       .eq('id', driverId)
@@ -155,12 +173,15 @@ export class NotificationsRepository {
     entity_id: number;
     meta?: Record<string, any>;
   }): Promise<void> {
-    await this.supabase.getClient().from('audit_logs').insert({
-      action: data.action,
-      entity_type: data.entity_type,
-      entity_id: data.entity_id,
-      meta: data.meta ?? {},
-      created_at: new Date().toISOString(),
-    });
+    await this.supabase
+      .getClient()
+      .from('audit_logs')
+      .insert({
+        action: data.action,
+        entity_type: data.entity_type,
+        entity_id: data.entity_id,
+        meta: data.meta ?? {},
+        created_at: new Date().toISOString(),
+      });
   }
 }

@@ -11,7 +11,11 @@ import {
   Req,
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
-import { CreateUploadUrlDto, CreateDocumentDto, UpdateDocumentStatusDto } from './dto';
+import {
+  CreateUploadUrlDto,
+  CreateDocumentDto,
+  UpdateDocumentStatusDto,
+} from './dto';
 
 @Controller('documents')
 export class DocumentsController {

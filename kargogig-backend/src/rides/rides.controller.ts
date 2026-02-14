@@ -1,11 +1,18 @@
-import { Body, Controller, Headers, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { RidesService } from './rides.service';
 import { EstimateRideDto } from './dto/estimate-ride.dto';
 import { CustomerCancelDto, DriverCancelDto } from './dto/cancel-ride.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { CompleteRideDto } from './dto/complete-ride.dto';
 import { RateRideDto } from './dto/rate-ride.dto';
-
 
 @Controller('rides')
 export class RidesController {

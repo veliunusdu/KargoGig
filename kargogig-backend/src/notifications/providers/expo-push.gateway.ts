@@ -14,7 +14,9 @@ export class ExpoPushGateway implements PushProvider {
   constructor() {
     const accessToken = process.env.EXPO_ACCESS_TOKEN;
     this.expo = new Expo({ accessToken });
-    this.logger.log(`[ExpoPushGateway] Initialized (accessToken: ${accessToken ? 'set' : 'not set'})`);
+    this.logger.log(
+      `[ExpoPushGateway] Initialized (accessToken: ${accessToken ? 'set' : 'not set'})`,
+    );
   }
 
   async sendToTokens(
@@ -30,10 +32,14 @@ export class ExpoPushGateway implements PushProvider {
 
     // Filter valid Expo push tokens
     const validTokens = tokens.filter((t) => Expo.isExpoPushToken(t));
-    const invalidTokens: string[] = tokens.filter((t) => !Expo.isExpoPushToken(t));
+    const invalidTokens: string[] = tokens.filter(
+      (t) => !Expo.isExpoPushToken(t),
+    );
 
     if (invalidTokens.length > 0) {
-      this.logger.warn(`[sendToTokens] Invalid tokens: ${invalidTokens.join(', ')}`);
+      this.logger.warn(
+        `[sendToTokens] Invalid tokens: ${invalidTokens.join(', ')}`,
+      );
     }
 
     if (validTokens.length === 0) {
@@ -57,7 +63,8 @@ export class ExpoPushGateway implements PushProvider {
 
     for (const chunk of chunks) {
       try {
-        const tickets: ExpoPushTicket[] = await this.expo.sendPushNotificationsAsync(chunk);
+        const tickets: ExpoPushTicket[] =
+          await this.expo.sendPushNotificationsAsync(chunk);
 
         tickets.forEach((ticket, idx) => {
           if (ticket.status === 'ok') {
@@ -83,7 +90,9 @@ export class ExpoPushGateway implements PushProvider {
       }
     }
 
-    this.logger.log(`[sendToTokens] Sent: ${sent}, Failed: ${failed}, Invalid: ${invalidTokens.length}`);
+    this.logger.log(
+      `[sendToTokens] Sent: ${sent}, Failed: ${failed}, Invalid: ${invalidTokens.length}`,
+    );
 
     return { ok: true, sent, failed, invalidTokens };
   }

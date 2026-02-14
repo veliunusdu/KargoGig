@@ -139,13 +139,18 @@ describe('Payment Refunds (e2e)', () => {
    * Credit company wallet via RPC (simulates payment success).
    */
   async function creditCompanyWallet(paymentId: number): Promise<void> {
-    const { error } = await supabaseAdmin.rpc('credit_company_wallet_for_payment', {
-      p_payment_id: paymentId,
-    });
+    const { error } = await supabaseAdmin.rpc(
+      'credit_company_wallet_for_payment',
+      {
+        p_payment_id: paymentId,
+      },
+    );
 
     // Gracefully skip if RPC not deployed yet
     if (error && error.message.includes('could not find')) {
-      console.warn('[creditCompanyWallet] RPC not found, skipping wallet credit');
+      console.warn(
+        '[creditCompanyWallet] RPC not found, skipping wallet credit',
+      );
       return;
     }
 
@@ -156,7 +161,8 @@ describe('Payment Refunds (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -183,17 +189,22 @@ describe('Payment Refunds (e2e)', () => {
     // Owner user
     {
       const email = `owner-refund-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
 
       const { data: prof, error: profErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ user_id: ownerUserId, full_name: 'Owner Refund', role: 'company' })
+        .insert({
+          user_id: ownerUserId,
+          full_name: 'Owner Refund',
+          role: 'company',
+        })
         .select('id')
         .single();
       if (profErr) throw profErr;
@@ -221,17 +232,22 @@ describe('Payment Refunds (e2e)', () => {
     // Customer user
     {
       const email = `customer-refund-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customerUserId = u.user.id;
 
       const { data: prof, error: profErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ user_id: customerUserId, full_name: 'Customer Refund', role: 'customer' })
+        .insert({
+          user_id: customerUserId,
+          full_name: 'Customer Refund',
+          role: 'customer',
+        })
         .select('id')
         .single();
       if (profErr) throw profErr;
@@ -248,17 +264,22 @@ describe('Payment Refunds (e2e)', () => {
     // Driver user
     {
       const email = `driver-refund-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       driverUserId = u.user.id;
 
       const { data: prof, error: profErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ user_id: driverUserId, full_name: 'Driver Refund', role: 'driver' })
+        .insert({
+          user_id: driverUserId,
+          full_name: 'Driver Refund',
+          role: 'driver',
+        })
         .select('id')
         .single();
       if (profErr) throw profErr;
@@ -317,26 +338,44 @@ describe('Payment Refunds (e2e)', () => {
   afterAll(async () => {
     // Clean up test data
     if (createdPaymentIds.length) {
-      await supabaseAdmin.from('payment_refunds').delete().in('payment_id', createdPaymentIds);
-      await supabaseAdmin.from('payment_provider_events').delete().in('payment_id', createdPaymentIds);
+      await supabaseAdmin
+        .from('payment_refunds')
+        .delete()
+        .in('payment_id', createdPaymentIds);
+      await supabaseAdmin
+        .from('payment_provider_events')
+        .delete()
+        .in('payment_id', createdPaymentIds);
       await supabaseAdmin.from('payments').delete().in('id', createdPaymentIds);
     }
     if (createdShipmentIds.length) {
-      await supabaseAdmin.from('shipments').delete().in('id', createdShipmentIds);
+      await supabaseAdmin
+        .from('shipments')
+        .delete()
+        .in('id', createdShipmentIds);
     }
     if (createdOfferIds.length) {
       await supabaseAdmin.from('offers').delete().in('id', createdOfferIds);
     }
     if (createdAnnouncementIds.length) {
-      await supabaseAdmin.from('announcements').delete().in('id', createdAnnouncementIds);
+      await supabaseAdmin
+        .from('announcements')
+        .delete()
+        .in('id', createdAnnouncementIds);
     }
-    if (vehicleId) await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
-    if (driverId) await supabaseAdmin.from('drivers').delete().eq('id', driverId);
-    if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
-    if (walletId) await supabaseAdmin.from('wallets').delete().eq('id', walletId);
-    if (companyId) await supabaseAdmin.from('companies').delete().eq('id', companyId);
+    if (vehicleId)
+      await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
+    if (driverId)
+      await supabaseAdmin.from('drivers').delete().eq('id', driverId);
+    if (customerId)
+      await supabaseAdmin.from('customers').delete().eq('id', customerId);
+    if (walletId)
+      await supabaseAdmin.from('wallets').delete().eq('id', walletId);
+    if (companyId)
+      await supabaseAdmin.from('companies').delete().eq('id', companyId);
     if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
-    if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+    if (customerUserId)
+      await supabaseAdmin.auth.admin.deleteUser(customerUserId);
     if (driverUserId) await supabaseAdmin.auth.admin.deleteUser(driverUserId);
 
     await app.close();

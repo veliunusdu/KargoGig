@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DriversService } from './drivers.service';
 import { DriversRepository } from './drivers.repository';
-import { HttpException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 describe('DriversService', () => {
   let service: DriversService;
@@ -37,11 +41,24 @@ describe('DriversService', () => {
   describe('findNearbyDrivers', () => {
     it('should return nearby drivers', async () => {
       const mockDrivers = [
-        { driver_id: 1, company_id: null, lat: 41.0, lng: 29.0, distance_m: 100, last_seen_at: '2026-01-01T00:00:00Z' },
+        {
+          driver_id: 1,
+          company_id: null,
+          lat: 41.0,
+          lng: 29.0,
+          distance_m: 100,
+          last_seen_at: '2026-01-01T00:00:00Z',
+        },
       ];
 
-      repository.debugCheckDriverLocations.mockResolvedValue({ count: 1, sample: {} });
-      repository.findDriversWithinRadius.mockResolvedValue({ data: mockDrivers, error: null });
+      repository.debugCheckDriverLocations.mockResolvedValue({
+        count: 1,
+        sample: {},
+      });
+      repository.findDriversWithinRadius.mockResolvedValue({
+        data: mockDrivers,
+        error: null,
+      });
 
       const result = await service.findNearbyDrivers({ lat: 41.0, lng: 29.0 });
 
@@ -51,15 +68,29 @@ describe('DriversService', () => {
     });
 
     it('should throw HttpException on RPC error', async () => {
-      repository.debugCheckDriverLocations.mockResolvedValue({ count: 0, sample: null });
-      repository.findDriversWithinRadius.mockResolvedValue({ data: null, error: new Error('RPC failed') });
+      repository.debugCheckDriverLocations.mockResolvedValue({
+        count: 0,
+        sample: null,
+      });
+      repository.findDriversWithinRadius.mockResolvedValue({
+        data: null,
+        error: new Error('RPC failed'),
+      });
 
-      await expect(service.findNearbyDrivers({ lat: 41.0, lng: 29.0 })).rejects.toThrow(HttpException);
+      await expect(
+        service.findNearbyDrivers({ lat: 41.0, lng: 29.0 }),
+      ).rejects.toThrow(HttpException);
     });
 
     it('should return empty array when no drivers found', async () => {
-      repository.debugCheckDriverLocations.mockResolvedValue({ count: 0, sample: null });
-      repository.findDriversWithinRadius.mockResolvedValue({ data: [], error: null });
+      repository.debugCheckDriverLocations.mockResolvedValue({
+        count: 0,
+        sample: null,
+      });
+      repository.findDriversWithinRadius.mockResolvedValue({
+        data: [],
+        error: null,
+      });
 
       const result = await service.findNearbyDrivers({ lat: 41.0, lng: 29.0 });
 
@@ -75,12 +106,22 @@ describe('DriversService', () => {
     });
 
     it('should update location successfully', async () => {
-      repository.upsertMyLocation.mockResolvedValue({ data: { success: true }, error: null });
+      repository.upsertMyLocation.mockResolvedValue({
+        data: { success: true },
+        error: null,
+      });
 
-      const result = await service.upsertMyLocation('Bearer valid-token', { lat: 41.0, lng: 29.0 });
+      const result = await service.upsertMyLocation('Bearer valid-token', {
+        lat: 41.0,
+        lng: 29.0,
+      });
 
       expect(result).toEqual({ success: true });
-      expect(repository.upsertMyLocation).toHaveBeenCalledWith('valid-token', 41.0, 29.0);
+      expect(repository.upsertMyLocation).toHaveBeenCalledWith(
+        'valid-token',
+        41.0,
+        29.0,
+      );
     });
   });
 
@@ -88,7 +129,9 @@ describe('DriversService', () => {
     it('should throw NotFoundException when driver not found', async () => {
       repository.findDriverById.mockResolvedValue({ data: null, error: null });
 
-      await expect(service.getDriverById(999)).rejects.toThrow(NotFoundException);
+      await expect(service.getDriverById(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

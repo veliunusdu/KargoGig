@@ -46,7 +46,7 @@ describe('Driver Complete Delivery (e2e)', () => {
       password,
     });
     if (error) throw error;
-    return data.session!.access_token;
+    return data.session.access_token;
   }
 
   async function createTestAnnouncement(
@@ -79,7 +79,9 @@ describe('Driver Complete Delivery (e2e)', () => {
     return data.id as number;
   }
 
-  async function createInProgressShipment(announcementId: number): Promise<number> {
+  async function createInProgressShipment(
+    announcementId: number,
+  ): Promise<number> {
     const now = new Date().toISOString();
     const { data, error } = await supabaseAdmin
       .from('shipments')
@@ -108,7 +110,9 @@ describe('Driver Complete Delivery (e2e)', () => {
     return data.id as number;
   }
 
-  async function createArrivedShipment(announcementId: number): Promise<number> {
+  async function createArrivedShipment(
+    announcementId: number,
+  ): Promise<number> {
     const now = new Date().toISOString();
     const { data, error } = await supabaseAdmin
       .from('shipments')
@@ -152,8 +156,8 @@ describe('Driver Complete Delivery (e2e)', () => {
     if (STRICT_MODE) {
       throw new Error(
         `[E2E_STRICT_DB] RPC '${rpcName}' not found in database.\n` +
-        `Deploy the SQL function before running strict E2E.\n` +
-        `Response: ${msg}`,
+          `Deploy the SQL function before running strict E2E.\n` +
+          `Response: ${msg}`,
       );
     }
     console.warn(
@@ -165,7 +169,8 @@ describe('Driver Complete Delivery (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -191,22 +196,26 @@ describe('Driver Complete Delivery (e2e)', () => {
     // Owner user
     {
       const email = `owner-complete-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
 
     // Company via RPC
     {
-      const { data: newCompanyId, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-Complete-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: newCompanyId, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-Complete-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = newCompanyId;
     }
@@ -229,11 +238,12 @@ describe('Driver Complete Delivery (e2e)', () => {
     // Driver 1 (the assigned driver)
     {
       const email = `driver-complete-${Date.now()}_0@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       const driverUserId = u.user.id;
@@ -287,11 +297,12 @@ describe('Driver Complete Delivery (e2e)', () => {
     // Driver 2 (unauthorized driver — different from the assigned one)
     {
       const email = `driver-complete-${Date.now()}_1@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       driver2UserId = u.user.id;
@@ -318,11 +329,12 @@ describe('Driver Complete Delivery (e2e)', () => {
     // Customer
     {
       const email = `customer-complete-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       customerUserId = u.user.id;
@@ -342,23 +354,39 @@ describe('Driver Complete Delivery (e2e)', () => {
 
   afterAll(async () => {
     try {
-      if (driverIds.length) await supabaseAdmin.from('driver_locations').delete().in('driver_id', driverIds);
-      if (vehicleIds.length) await supabaseAdmin.from('vehicles').delete().in('id', vehicleIds);
-      if (driverIds.length) await supabaseAdmin.from('drivers').delete().in('id', driverIds);
+      if (driverIds.length)
+        await supabaseAdmin
+          .from('driver_locations')
+          .delete()
+          .in('driver_id', driverIds);
+      if (vehicleIds.length)
+        await supabaseAdmin.from('vehicles').delete().in('id', vehicleIds);
+      if (driverIds.length)
+        await supabaseAdmin.from('drivers').delete().in('id', driverIds);
       if (driver2Id) {
         await supabaseAdmin.from('drivers').delete().eq('id', driver2Id);
       }
-      if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
+      if (customerId)
+        await supabaseAdmin.from('customers').delete().eq('id', customerId);
 
       if (companyId) {
-        await supabaseAdmin.from('company_users').delete().eq('company_id', companyId);
-        await supabaseAdmin.from('company_pricing').delete().eq('company_id', companyId);
+        await supabaseAdmin
+          .from('company_users')
+          .delete()
+          .eq('company_id', companyId);
+        await supabaseAdmin
+          .from('company_pricing')
+          .delete()
+          .eq('company_id', companyId);
         await supabaseAdmin.from('companies').delete().eq('id', companyId);
       }
 
-      for (const uid of driverUserIds) await supabaseAdmin.auth.admin.deleteUser(uid);
-      if (driver2UserId) await supabaseAdmin.auth.admin.deleteUser(driver2UserId);
-      if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+      for (const uid of driverUserIds)
+        await supabaseAdmin.auth.admin.deleteUser(uid);
+      if (driver2UserId)
+        await supabaseAdmin.auth.admin.deleteUser(driver2UserId);
+      if (customerUserId)
+        await supabaseAdmin.auth.admin.deleteUser(customerUserId);
       if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
     } catch (e) {
       console.error('Cleanup error:', e);
@@ -382,15 +410,24 @@ describe('Driver Complete Delivery (e2e)', () => {
     afterEach(async () => {
       if (shipmentId) {
         try {
-          await supabaseAdmin.from('notifications').delete().eq('related_shipment_id', shipmentId);
+          await supabaseAdmin
+            .from('notifications')
+            .delete()
+            .eq('related_shipment_id', shipmentId);
         } catch {}
         try {
-          await supabaseAdmin.from('shipment_status_history').delete().eq('shipment_id', shipmentId);
+          await supabaseAdmin
+            .from('shipment_status_history')
+            .delete()
+            .eq('shipment_id', shipmentId);
         } catch {}
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -459,16 +496,21 @@ describe('Driver Complete Delivery (e2e)', () => {
 
       if (notifications && notifications.length > 0) {
         const completeNotif = notifications.find(
-          (n: any) => n.type === 'ride_completed' || n.type === 'delivery_completed',
+          (n: any) =>
+            n.type === 'ride_completed' || n.type === 'delivery_completed',
         );
         if (completeNotif) {
           expect(completeNotif.user_id).toBe(customerUserId);
           console.log('[Test A] Notification verified:', completeNotif);
         } else {
-          console.warn('[Test A] Notification rows exist but none with type ride_completed/delivery_completed');
+          console.warn(
+            '[Test A] Notification rows exist but none with type ride_completed/delivery_completed',
+          );
         }
       } else {
-        console.warn('[Test A] No notifications found — notification logic may not be deployed yet');
+        console.warn(
+          '[Test A] No notifications found — notification logic may not be deployed yet',
+        );
       }
     });
   });
@@ -488,7 +530,10 @@ describe('Driver Complete Delivery (e2e)', () => {
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -535,15 +580,24 @@ describe('Driver Complete Delivery (e2e)', () => {
     afterEach(async () => {
       if (shipmentId) {
         try {
-          await supabaseAdmin.from('notifications').delete().eq('related_shipment_id', shipmentId);
+          await supabaseAdmin
+            .from('notifications')
+            .delete()
+            .eq('related_shipment_id', shipmentId);
         } catch {}
         try {
-          await supabaseAdmin.from('shipment_status_history').delete().eq('shipment_id', shipmentId);
+          await supabaseAdmin
+            .from('shipment_status_history')
+            .delete()
+            .eq('shipment_id', shipmentId);
         } catch {}
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -590,13 +644,19 @@ describe('Driver Complete Delivery (e2e)', () => {
 
       if (notifications) {
         const completeNotifs = notifications.filter(
-          (n: any) => n.type === 'ride_completed' || n.type === 'delivery_completed',
+          (n: any) =>
+            n.type === 'ride_completed' || n.type === 'delivery_completed',
         );
         expect(completeNotifs.length).toBeLessThanOrEqual(1);
-        console.log('[Test C] Notification count after double-tap:', completeNotifs.length);
+        console.log(
+          '[Test C] Notification count after double-tap:',
+          completeNotifs.length,
+        );
       }
 
-      console.log('[Test C] Idempotency verified — second call returned same data');
+      console.log(
+        '[Test C] Idempotency verified — second call returned same data',
+      );
     });
   });
 
@@ -615,7 +675,10 @@ describe('Driver Complete Delivery (e2e)', () => {
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -660,7 +723,10 @@ describe('Driver Complete Delivery (e2e)', () => {
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 

@@ -7,11 +7,7 @@ import {
   TABLE_DRIVERS,
   TABLE_DRIVER_LOCATIONS,
 } from './constants/drivers.constants';
-import {
-  DriverNearbyResultRaw,
-  DriverWithRelations,
-  Driver,
-} from './types';
+import { DriverNearbyResultRaw, DriverWithRelations, Driver } from './types';
 
 /**
  * Repository layer for driver-related database operations
@@ -55,41 +51,53 @@ export class DriversRepository {
     return { data: result as Driver | null, error };
   }
 
-  async findDriverById(id: number): Promise<{ data: DriverWithRelations | null; error: Error | null }> {
+  async findDriverById(
+    id: number,
+  ): Promise<{ data: DriverWithRelations | null; error: Error | null }> {
     const { data, error } = await this.serviceClient
       .from(TABLE_DRIVERS)
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (id, name),
         profiles:user_id (name, phone, email)
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
     return { data: data as DriverWithRelations | null, error };
   }
 
-  async findDriverByUserId(userId: string): Promise<{ data: DriverWithRelations | null; error: Error | null }> {
+  async findDriverByUserId(
+    userId: string,
+  ): Promise<{ data: DriverWithRelations | null; error: Error | null }> {
     const { data, error } = await this.serviceClient
       .from(TABLE_DRIVERS)
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (id, name),
         profiles:user_id (name, phone, email)
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .single();
 
     return { data: data as DriverWithRelations | null, error };
   }
 
-  async findDriversByCompanyId(companyId: number): Promise<{ data: DriverWithRelations[] | null; error: Error | null }> {
+  async findDriversByCompanyId(
+    companyId: number,
+  ): Promise<{ data: DriverWithRelations[] | null; error: Error | null }> {
     const { data, error } = await this.serviceClient
       .from(TABLE_DRIVERS)
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (name, phone, email)
-      `)
+      `,
+      )
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
 
@@ -128,14 +136,19 @@ export class DriversRepository {
     lat: number,
     lng: number,
   ): Promise<{ data: unknown; error: Error | null }> {
-    this.logger.log(`[upsertMyLocation] Calling RPC with lat=${lat}, lng=${lng}`);
+    this.logger.log(
+      `[upsertMyLocation] Calling RPC with lat=${lat}, lng=${lng}`,
+    );
 
     const userClient = this.getUserClient(token);
 
-    const { data, error } = await userClient.rpc(RPC_UPSERT_MY_DRIVER_LOCATION, {
-      p_lat: lat,
-      p_lng: lng,
-    });
+    const { data, error } = await userClient.rpc(
+      RPC_UPSERT_MY_DRIVER_LOCATION,
+      {
+        p_lat: lat,
+        p_lng: lng,
+      },
+    );
 
     this.logger.log(
       `[upsertMyLocation] RPC result: success=${!error}, error=${error?.message ?? 'none'}`,
@@ -157,12 +170,15 @@ export class DriversRepository {
       `[findDriversWithinRadius] Calling RPC with lat=${params.lat}, lng=${params.lng}, radius=${params.radiusM}, limit=${params.limit}`,
     );
 
-    const { data, error } = await this.serviceClient.rpc(RPC_DRIVERS_WITHIN_RADIUS, {
-      p_lat: params.lat,
-      p_lng: params.lng,
-      p_radius_m: params.radiusM,
-      p_limit: params.limit,
-    });
+    const { data, error } = await this.serviceClient.rpc(
+      RPC_DRIVERS_WITHIN_RADIUS,
+      {
+        p_lat: params.lat,
+        p_lng: params.lng,
+        p_radius_m: params.radiusM,
+        p_limit: params.limit,
+      },
+    );
 
     this.logger.log(
       `[findDriversWithinRadius] RPC result: count=${Array.isArray(data) ? data.length : 0}, error=${error?.message ?? 'none'}`,
@@ -183,8 +199,13 @@ export class DriversRepository {
     token: string,
     deviceType: string,
     deviceToken: string | null,
-  ): Promise<{ data: { ok: boolean; driver_id: number; is_online: boolean } | null; error: Error | null }> {
-    this.logger.log(`[goOnline] device_type=${deviceType}, has_token=${!!deviceToken}`);
+  ): Promise<{
+    data: { ok: boolean; driver_id: number; is_online: boolean } | null;
+    error: Error | null;
+  }> {
+    this.logger.log(
+      `[goOnline] device_type=${deviceType}, has_token=${!!deviceToken}`,
+    );
 
     const userClient = this.getUserClient(token);
 
@@ -207,7 +228,10 @@ export class DriversRepository {
   async goOffline(
     token: string,
     deviceType: string,
-  ): Promise<{ data: { ok: boolean; driver_id: number; is_online: boolean } | null; error: Error | null }> {
+  ): Promise<{
+    data: { ok: boolean; driver_id: number; is_online: boolean } | null;
+    error: Error | null;
+  }> {
     this.logger.log(`[goOffline] device_type=${deviceType}`);
 
     const userClient = this.getUserClient(token);
@@ -230,7 +254,10 @@ export class DriversRepository {
   /**
    * Check if driver_locations table has any data (debug helper)
    */
-  async debugCheckDriverLocations(): Promise<{ count: number; sample: unknown }> {
+  async debugCheckDriverLocations(): Promise<{
+    count: number;
+    sample: unknown;
+  }> {
     const { data, error } = await this.serviceClient
       .from(TABLE_DRIVER_LOCATIONS)
       .select('driver_id, lat, lng, last_seen_at')

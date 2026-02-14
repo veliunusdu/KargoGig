@@ -37,7 +37,7 @@ describe('Ride Cancellation (e2e)', () => {
       password,
     });
     if (error) throw error;
-    return data.session!.access_token;
+    return data.session.access_token;
   }
 
   async function createTestAnnouncement(): Promise<number> {
@@ -70,7 +70,9 @@ describe('Ride Cancellation (e2e)', () => {
     return data.id as number;
   }
 
-  async function createAssignedShipment(announcementId: number): Promise<number> {
+  async function createAssignedShipment(
+    announcementId: number,
+  ): Promise<number> {
     const { data, error } = await supabaseAdmin
       .from('shipments')
       .insert({
@@ -118,8 +120,8 @@ describe('Ride Cancellation (e2e)', () => {
     if (STRICT_MODE) {
       throw new Error(
         `[E2E_STRICT_DB] RPC '${rpcName}' not found in database.\n` +
-        `Deploy the SQL function before running strict E2E.\n` +
-        `Response: ${msg}`,
+          `Deploy the SQL function before running strict E2E.\n` +
+          `Response: ${msg}`,
       );
     }
     console.warn(
@@ -131,7 +133,8 @@ describe('Ride Cancellation (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -162,22 +165,26 @@ describe('Ride Cancellation (e2e)', () => {
     // Owner user (same pattern as matching.e2e-spec.ts)
     {
       const email = `owner${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
 
     // Company via RPC (same pattern as matching.e2e-spec.ts)
     {
-      const { data: newCompanyId, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: newCompanyId, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = newCompanyId;
     }
@@ -185,11 +192,12 @@ describe('Ride Cancellation (e2e)', () => {
     // Driver (EXACT same pattern as matching.e2e-spec.ts)
     {
       const email = `driver${Date.now()}_0@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       const driverUserId = u.user.id;
@@ -248,11 +256,12 @@ describe('Ride Cancellation (e2e)', () => {
     // Customer (same pattern as matching.e2e-spec.ts)
     {
       const email = `customer${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       customerUserId = u.user.id;
@@ -274,19 +283,34 @@ describe('Ride Cancellation (e2e)', () => {
 
   afterAll(async () => {
     try {
-      if (driverIds.length) await supabaseAdmin.from('driver_locations').delete().in('driver_id', driverIds);
-      if (vehicleIds.length) await supabaseAdmin.from('vehicles').delete().in('id', vehicleIds);
-      if (driverIds.length) await supabaseAdmin.from('drivers').delete().in('id', driverIds);
-      if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
+      if (driverIds.length)
+        await supabaseAdmin
+          .from('driver_locations')
+          .delete()
+          .in('driver_id', driverIds);
+      if (vehicleIds.length)
+        await supabaseAdmin.from('vehicles').delete().in('id', vehicleIds);
+      if (driverIds.length)
+        await supabaseAdmin.from('drivers').delete().in('id', driverIds);
+      if (customerId)
+        await supabaseAdmin.from('customers').delete().eq('id', customerId);
 
       if (companyId) {
-        await supabaseAdmin.from('company_users').delete().eq('company_id', companyId);
-        await supabaseAdmin.from('company_pricing').delete().eq('company_id', companyId);
+        await supabaseAdmin
+          .from('company_users')
+          .delete()
+          .eq('company_id', companyId);
+        await supabaseAdmin
+          .from('company_pricing')
+          .delete()
+          .eq('company_id', companyId);
         await supabaseAdmin.from('companies').delete().eq('id', companyId);
       }
 
-      for (const uid of driverUserIds) await supabaseAdmin.auth.admin.deleteUser(uid);
-      if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+      for (const uid of driverUserIds)
+        await supabaseAdmin.auth.admin.deleteUser(uid);
+      if (customerUserId)
+        await supabaseAdmin.auth.admin.deleteUser(customerUserId);
       if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
     } catch (e) {
       console.error('Cleanup error:', e);
@@ -331,8 +355,14 @@ describe('Ride Cancellation (e2e)', () => {
 
     afterEach(async () => {
       if (announcementId) {
-        await supabaseAdmin.from('shipments').delete().eq('announcement_id', announcementId);
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('shipments')
+          .delete()
+          .eq('announcement_id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -359,8 +389,14 @@ describe('Ride Cancellation (e2e)', () => {
 
     afterEach(async () => {
       if (announcementId) {
-        await supabaseAdmin.from('shipments').delete().eq('announcement_id', announcementId);
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('shipments')
+          .delete()
+          .eq('announcement_id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -397,8 +433,14 @@ describe('Ride Cancellation (e2e)', () => {
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcement_broadcast_batches').delete().eq('announcement_id', announcementId);
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcement_broadcast_batches')
+          .delete()
+          .eq('announcement_id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -436,7 +478,9 @@ describe('Ride Cancellation (e2e)', () => {
       expect(shipment?.driver_id).toBeNull();
       expect(shipment?.cancellation_reason).toBe('vehicle_issue');
       // Status should reflect driver cancellation
-      expect(['driver_cancelled', 'cancelled', 'unassigned']).toContain(shipment?.status);
+      expect(['driver_cancelled', 'cancelled', 'unassigned']).toContain(
+        shipment?.status,
+      );
 
       // ---- POST-CONDITION 2: announcement status reverts for rebroadcast ----
       const { data: announcement } = await supabaseAdmin
@@ -446,7 +490,9 @@ describe('Ride Cancellation (e2e)', () => {
         .single();
 
       // After driver cancel, announcement should be re-broadcastable
-      expect(['pending', 'broadcasting', 'rebroadcasting']).toContain(announcement?.status);
+      expect(['pending', 'broadcasting', 'rebroadcasting']).toContain(
+        announcement?.status,
+      );
 
       // ---- POST-CONDITION 3: rebroadcast batch created (if applicable) ----
       const { rebroadcasted, new_batch_id } = res.body.result;
@@ -471,7 +517,9 @@ describe('Ride Cancellation (e2e)', () => {
         });
       } else {
         // Even if no rebroadcast (e.g., no eligible drivers), the shipment must still be unassigned
-        console.log('[Test C] No rebroadcast (no eligible drivers or RPC chose not to)');
+        console.log(
+          '[Test C] No rebroadcast (no eligible drivers or RPC chose not to)',
+        );
         expect(shipment?.driver_id).toBeNull();
       }
 
@@ -485,14 +533,18 @@ describe('Ride Cancellation (e2e)', () => {
       if (!auditErr && auditRows) {
         // Table exists — verify a row was written
         expect(auditRows.length).toBeGreaterThanOrEqual(1);
-        const driverCancel = auditRows.find((r: any) => r.cancelled_by === 'driver');
+        const driverCancel = auditRows.find(
+          (r: any) => r.cancelled_by === 'driver',
+        );
         if (driverCancel) {
           expect(driverCancel.reason).toBe('vehicle_issue');
         }
         console.log('[Test C] Audit log verified:', auditRows.length, 'row(s)');
       } else {
         // Table may not be deployed yet — warn, don't fail
-        console.warn('[Test C] shipment_cancellations table not found — audit log not verified');
+        console.warn(
+          '[Test C] shipment_cancellations table not found — audit log not verified',
+        );
       }
     });
 
@@ -543,7 +595,10 @@ describe('Ride Cancellation (e2e)', () => {
         await supabaseAdmin.from('shipments').delete().eq('id', shipmentId);
       }
       if (announcementId) {
-        await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
       }
     });
 
@@ -554,14 +609,16 @@ describe('Ride Cancellation (e2e)', () => {
       if (freeWindowStr === undefined) {
         console.warn(
           '[Test D] CANCEL_FREE_WINDOW_MINUTES not set — skipping fee test.\n' +
-          'Set CANCEL_FREE_WINDOW_MINUTES=0 to force fee on every cancel.',
+            'Set CANCEL_FREE_WINDOW_MINUTES=0 to force fee on every cancel.',
         );
         return;
       }
 
       // Back-date the shipment's assigned_at so it falls outside the free window
       const freeMinutes = parseInt(freeWindowStr, 10) || 0;
-      const pastDate = new Date(Date.now() - (freeMinutes + 5) * 60_000).toISOString();
+      const pastDate = new Date(
+        Date.now() - (freeMinutes + 5) * 60_000,
+      ).toISOString();
 
       await supabaseAdmin
         .from('shipments')

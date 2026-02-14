@@ -51,7 +51,9 @@ export class RefundsRepository {
   /**
    * Find payment by ID
    */
-  async findPaymentById(paymentId: number): Promise<{ data: Payment | null; error: any }> {
+  async findPaymentById(
+    paymentId: number,
+  ): Promise<{ data: Payment | null; error: any }> {
     const { data, error } = await this.serviceClient
       .from('payments')
       .select('*')
@@ -64,7 +66,9 @@ export class RefundsRepository {
   /**
    * Get total refunded amount for a payment
    */
-  async getTotalRefunded(paymentId: number): Promise<{ data: number; error: any }> {
+  async getTotalRefunded(
+    paymentId: number,
+  ): Promise<{ data: number; error: any }> {
     const { data, error } = await this.serviceClient
       .from('payment_refunds')
       .select('amount_gross')
@@ -73,7 +77,10 @@ export class RefundsRepository {
 
     if (error) return { data: 0, error };
 
-    const total = (data || []).reduce((sum, r: any) => sum + parseFloat(r.amount_gross), 0);
+    const total = (data || []).reduce(
+      (sum, r: any) => sum + parseFloat(r.amount_gross),
+      0,
+    );
     return { data: total, error: null };
   }
 
@@ -86,7 +93,9 @@ export class RefundsRepository {
     entity_id: number | null;
     meta?: any;
   }): Promise<void> {
-    this.logger.log(`[insertAuditLog] action=${log.action}, entity_id=${log.entity_id}`);
+    this.logger.log(
+      `[insertAuditLog] action=${log.action}, entity_id=${log.entity_id}`,
+    );
 
     const { error } = await this.serviceClient.from('audit_logs').insert({
       action: log.action,
@@ -112,7 +121,10 @@ export class RefundsRepository {
   }): Promise<{ data: any; error: any }> {
     this.logger.log(`[callRefundFullRpc] payment_id=${args.p_payment_id}`);
 
-    const { data, error } = await this.serviceClient.rpc('refund_full_for_payment', args);
+    const { data, error } = await this.serviceClient.rpc(
+      'refund_full_for_payment',
+      args,
+    );
 
     return { data, error };
   }
@@ -131,7 +143,10 @@ export class RefundsRepository {
       `[callRefundPartialRpc] payment_id=${args.p_payment_id}, amount=${args.p_amount_gross}`,
     );
 
-    const { data, error } = await this.serviceClient.rpc('refund_partial_for_payment', args);
+    const { data, error } = await this.serviceClient.rpc(
+      'refund_partial_for_payment',
+      args,
+    );
 
     return { data, error };
   }

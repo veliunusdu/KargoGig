@@ -57,7 +57,7 @@ describe('Payments (e2e)', () => {
       password,
     });
     if (error) throw error;
-    return data.session!.access_token;
+    return data.session.access_token;
   }
 
   /**
@@ -197,7 +197,8 @@ describe('Payments (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -223,22 +224,26 @@ describe('Payments (e2e)', () => {
     // Owner user
     {
       const email = `owner-payments-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
 
     // Company via RPC
     {
-      const { data: newCompanyId, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-Payments-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: newCompanyId, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-Payments-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = newCompanyId;
     }
@@ -246,11 +251,12 @@ describe('Payments (e2e)', () => {
     // Customer
     {
       const email = `customer-payments-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customerUserId = u.user.id;
 
@@ -280,11 +286,12 @@ describe('Payments (e2e)', () => {
     // Driver
     {
       const email = `driver-payments-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       driverUserId = u.user.id;
 
@@ -330,11 +337,20 @@ describe('Payments (e2e)', () => {
   afterAll(async () => {
     // Cleanup
     if (completedShipmentId) {
-      await supabaseAdmin.from('payments').delete().eq('shipment_id', completedShipmentId);
-      await supabaseAdmin.from('shipments').delete().eq('id', completedShipmentId);
+      await supabaseAdmin
+        .from('payments')
+        .delete()
+        .eq('shipment_id', completedShipmentId);
+      await supabaseAdmin
+        .from('shipments')
+        .delete()
+        .eq('id', completedShipmentId);
     }
     if (pendingShipmentId) {
-      await supabaseAdmin.from('shipments').delete().eq('id', pendingShipmentId);
+      await supabaseAdmin
+        .from('shipments')
+        .delete()
+        .eq('id', pendingShipmentId);
     }
     if (vehicleId) {
       await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
@@ -360,7 +376,10 @@ describe('Payments (e2e)', () => {
 
     // Delete offers then announcements
     await supabaseAdmin.from('offers').delete().eq('company_id', companyId!);
-    await supabaseAdmin.from('announcements').delete().eq('company_id', companyId!);
+    await supabaseAdmin
+      .from('announcements')
+      .delete()
+      .eq('company_id', companyId!);
 
     await app.close();
   }, 30000);

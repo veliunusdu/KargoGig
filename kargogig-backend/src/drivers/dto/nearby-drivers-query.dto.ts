@@ -35,8 +35,12 @@ export class NearbyDriversQueryDto {
   )
   @IsNumber({}, { message: 'radius must be a valid number' })
   @IsOptional()
-  @Min(NEARBY_DRIVERS_MIN_RADIUS_M, { message: `radius must be at least ${NEARBY_DRIVERS_MIN_RADIUS_M}m` })
-  @Max(NEARBY_DRIVERS_MAX_RADIUS_M, { message: `radius must be at most ${NEARBY_DRIVERS_MAX_RADIUS_M}m` })
+  @Min(NEARBY_DRIVERS_MIN_RADIUS_M, {
+    message: `radius must be at least ${NEARBY_DRIVERS_MIN_RADIUS_M}m`,
+  })
+  @Max(NEARBY_DRIVERS_MAX_RADIUS_M, {
+    message: `radius must be at most ${NEARBY_DRIVERS_MAX_RADIUS_M}m`,
+  })
   radius: number = NEARBY_DRIVERS_DEFAULT_RADIUS_M;
 
   @Transform(({ value }: TransformFnParams) =>
@@ -44,7 +48,11 @@ export class NearbyDriversQueryDto {
   )
   @IsNumber({}, { message: 'limit must be a valid number' })
   @IsOptional()
-  @Min(NEARBY_DRIVERS_MIN_LIMIT, { message: `limit must be at least ${NEARBY_DRIVERS_MIN_LIMIT}` })
-  @Max(NEARBY_DRIVERS_MAX_LIMIT, { message: `limit must be at most ${NEARBY_DRIVERS_MAX_LIMIT}` })
+  @Min(NEARBY_DRIVERS_MIN_LIMIT, {
+    message: `limit must be at least ${NEARBY_DRIVERS_MIN_LIMIT}`,
+  })
+  @Max(NEARBY_DRIVERS_MAX_LIMIT, {
+    message: `limit must be at most ${NEARBY_DRIVERS_MAX_LIMIT}`,
+  })
   limit: number = NEARBY_DRIVERS_DEFAULT_LIMIT;
 }

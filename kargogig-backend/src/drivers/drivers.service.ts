@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { DriversRepository } from './drivers.repository';
 import { DriverNearbyResult, DriverWithRelations, Driver } from './types';
-import { NEARBY_DRIVERS_DEFAULT_RADIUS_M, NEARBY_DRIVERS_DEFAULT_LIMIT } from './constants/drivers.constants';
+import {
+  NEARBY_DRIVERS_DEFAULT_RADIUS_M,
+  NEARBY_DRIVERS_DEFAULT_LIMIT,
+} from './constants/drivers.constants';
 
 /**
  * Service layer for driver business logic
@@ -32,7 +35,8 @@ export class DriversService {
     company_id?: number;
     license_number?: string;
   }): Promise<Driver> {
-    const { data, error } = await this.driversRepository.createDriver(createData);
+    const { data, error } =
+      await this.driversRepository.createDriver(createData);
 
     if (error) {
       this.logger.error(`[createDriver] Error: ${error.message}`);
@@ -43,7 +47,10 @@ export class DriversService {
     }
 
     if (!data) {
-      throw new HttpException('Failed to create driver', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to create driver',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     return data;
@@ -75,7 +82,8 @@ export class DriversService {
    * Get driver by user ID
    */
   async getDriverByUserId(userId: string): Promise<DriverWithRelations> {
-    const { data, error } = await this.driversRepository.findDriverByUserId(userId);
+    const { data, error } =
+      await this.driversRepository.findDriverByUserId(userId);
 
     if (error) {
       if ((error as { code?: string }).code === 'PGRST116') {
@@ -96,7 +104,8 @@ export class DriversService {
    * Get all drivers for a company
    */
   async getDriversByCompany(companyId: number): Promise<DriverWithRelations[]> {
-    const { data, error } = await this.driversRepository.findDriversByCompanyId(companyId);
+    const { data, error } =
+      await this.driversRepository.findDriversByCompanyId(companyId);
 
     if (error) {
       this.logger.error(`[getDriversByCompany] Error: ${error.message}`);
@@ -118,7 +127,10 @@ export class DriversService {
       company_id?: number;
     },
   ): Promise<Driver> {
-    const { data, error } = await this.driversRepository.updateDriver(id, updateData);
+    const { data, error } = await this.driversRepository.updateDriver(
+      id,
+      updateData,
+    );
 
     if (error) {
       this.logger.error(`[updateDriver] Error: ${error.message}`);
@@ -154,10 +166,14 @@ export class DriversService {
     // Extract JWT from "Bearer <token>"
     const token = authHeader?.replace('Bearer ', '');
     if (!token) {
-      throw new UnauthorizedException('Authorization header eksik veya geçersiz');
+      throw new UnauthorizedException(
+        'Authorization header eksik veya geçersiz',
+      );
     }
 
-    this.logger.log(`[upsertMyLocation] Updating location: lat=${dto.lat}, lng=${dto.lng}`);
+    this.logger.log(
+      `[upsertMyLocation] Updating location: lat=${dto.lat}, lng=${dto.lng}`,
+    );
 
     const { data, error } = await this.driversRepository.upsertMyLocation(
       token,
@@ -200,12 +216,13 @@ export class DriversService {
       `[findNearbyDrivers] DEBUG driver_locations: count=${debugInfo.count}, sample=${JSON.stringify(debugInfo.sample)}`,
     );
 
-    const { data, error } = await this.driversRepository.findDriversWithinRadius({
-      lat: params.lat,
-      lng: params.lng,
-      radiusM: radius,
-      limit,
-    });
+    const { data, error } =
+      await this.driversRepository.findDriversWithinRadius({
+        lat: params.lat,
+        lng: params.lng,
+        radiusM: radius,
+        limit,
+      });
 
     if (error) {
       this.logger.error(`[findNearbyDrivers] RPC error: ${error.message}`);
@@ -239,7 +256,9 @@ export class DriversService {
   ): Promise<{ ok: boolean; driver_id: number; is_online: boolean }> {
     const token = authHeader?.replace('Bearer ', '');
     if (!token) {
-      throw new UnauthorizedException('Authorization header eksik veya geçersiz');
+      throw new UnauthorizedException(
+        'Authorization header eksik veya geçersiz',
+      );
     }
 
     this.logger.log(
@@ -283,7 +302,9 @@ export class DriversService {
   ): Promise<{ ok: boolean; driver_id: number; is_online: boolean }> {
     const token = authHeader?.replace('Bearer ', '');
     if (!token) {
-      throw new UnauthorizedException('Authorization header eksik veya geçersiz');
+      throw new UnauthorizedException(
+        'Authorization header eksik veya geçersiz',
+      );
     }
 
     this.logger.log(`[goOffline] device_type=${dto.device_type || 'unknown'}`);

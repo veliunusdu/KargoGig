@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 
 /**
@@ -13,7 +18,10 @@ export class PaymentTimeoutService implements OnModuleInit, OnModuleDestroy {
   private intervalRef: ReturnType<typeof setInterval> | null = null;
 
   /** Check interval in milliseconds (default: 60s) */
-  private readonly intervalMs = parseInt(process.env.PAYMENT_TIMEOUT_CHECK_INTERVAL_MS || '60000', 10);
+  private readonly intervalMs = parseInt(
+    process.env.PAYMENT_TIMEOUT_CHECK_INTERVAL_MS || '60000',
+    10,
+  );
 
   constructor(private readonly paymentsService: PaymentsService) {}
 
@@ -31,7 +39,9 @@ export class PaymentTimeoutService implements OnModuleInit, OnModuleDestroy {
     if (this.intervalRef) {
       clearInterval(this.intervalRef);
       this.intervalRef = null;
-      this.logger.log('[onModuleDestroy] Stopped pending-payment timeout checker');
+      this.logger.log(
+        '[onModuleDestroy] Stopped pending-payment timeout checker',
+      );
     }
   }
 

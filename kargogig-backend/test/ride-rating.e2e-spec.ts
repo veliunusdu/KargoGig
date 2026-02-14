@@ -177,7 +177,8 @@ describe('Ride Rating (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -204,11 +205,12 @@ describe('Ride Rating (e2e)', () => {
     // Owner user
     {
       const email = `owner-rating-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
@@ -235,11 +237,12 @@ describe('Ride Rating (e2e)', () => {
     // Customer user
     {
       const email = `customer-rating-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customerUserId = u.user.id;
 
@@ -252,10 +255,11 @@ describe('Ride Rating (e2e)', () => {
       customerId = cust.id;
 
       // Get customer token
-      const { data: session, error: sessionErr } = await supabaseAdmin.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data: session, error: sessionErr } =
+        await supabaseAdmin.auth.signInWithPassword({
+          email,
+          password,
+        });
       if (sessionErr) throw sessionErr;
       customerToken = `Bearer ${session.session.access_token}`;
     }
@@ -263,11 +267,12 @@ describe('Ride Rating (e2e)', () => {
     // Driver user
     {
       const email = `driver-rating-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       driverUserId = u.user.id;
 
@@ -310,21 +315,35 @@ describe('Ride Rating (e2e)', () => {
   afterAll(async () => {
     // Clean up test data
     if (createdShipmentIds.length) {
-      await supabaseAdmin.from('ride_ratings').delete().in('shipment_id', createdShipmentIds);
-      await supabaseAdmin.from('shipments').delete().in('id', createdShipmentIds);
+      await supabaseAdmin
+        .from('ride_ratings')
+        .delete()
+        .in('shipment_id', createdShipmentIds);
+      await supabaseAdmin
+        .from('shipments')
+        .delete()
+        .in('id', createdShipmentIds);
     }
     if (createdOfferIds.length) {
       await supabaseAdmin.from('offers').delete().in('id', createdOfferIds);
     }
     if (createdAnnouncementIds.length) {
-      await supabaseAdmin.from('announcements').delete().in('id', createdAnnouncementIds);
+      await supabaseAdmin
+        .from('announcements')
+        .delete()
+        .in('id', createdAnnouncementIds);
     }
-    if (vehicleId) await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
-    if (driverId) await supabaseAdmin.from('drivers').delete().eq('id', driverId);
-    if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
-    if (companyId) await supabaseAdmin.from('companies').delete().eq('id', companyId);
+    if (vehicleId)
+      await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
+    if (driverId)
+      await supabaseAdmin.from('drivers').delete().eq('id', driverId);
+    if (customerId)
+      await supabaseAdmin.from('customers').delete().eq('id', customerId);
+    if (companyId)
+      await supabaseAdmin.from('companies').delete().eq('id', companyId);
     if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
-    if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+    if (customerUserId)
+      await supabaseAdmin.auth.admin.deleteUser(customerUserId);
     if (driverUserId) await supabaseAdmin.auth.admin.deleteUser(driverUserId);
 
     await app.close();

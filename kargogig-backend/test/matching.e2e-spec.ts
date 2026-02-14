@@ -22,7 +22,8 @@ describe('Matching E2E (ride -> match)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -38,22 +39,26 @@ describe('Matching E2E (ride -> match)', () => {
     // Owner user
     {
       const email = `owner${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: 'password123',
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: 'password123',
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
 
     // Company via RPC (auth.uid() not null)
     {
-      const { data: newCompanyId, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: newCompanyId, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = newCompanyId;
     }
@@ -61,11 +66,12 @@ describe('Matching E2E (ride -> match)', () => {
     // 2 drivers + vehicles + locations
     for (let i = 0; i < 2; i++) {
       const email = `driver${Date.now()}_${i}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: 'password123',
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: 'password123',
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       const driverUserId = u.user.id;
@@ -125,11 +131,12 @@ describe('Matching E2E (ride -> match)', () => {
     // customer - auth.users trigger auto-creates customer, so we just select it
     {
       const email = `customer${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: 'password123',
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: 'password123',
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       customerUserId = u.user.id;
@@ -182,22 +189,41 @@ describe('Matching E2E (ride -> match)', () => {
 
   afterAll(async () => {
     try {
-      if (announcementId) await supabaseAdmin.from('announcements').delete().eq('id', announcementId);
+      if (announcementId)
+        await supabaseAdmin
+          .from('announcements')
+          .delete()
+          .eq('id', announcementId);
 
-      if (driverIds.length) await supabaseAdmin.from('driver_locations').delete().in('driver_id', driverIds);
-      if (vehicleIds.length) await supabaseAdmin.from('vehicles').delete().in('id', vehicleIds);
-      if (driverIds.length) await supabaseAdmin.from('drivers').delete().in('id', driverIds);
+      if (driverIds.length)
+        await supabaseAdmin
+          .from('driver_locations')
+          .delete()
+          .in('driver_id', driverIds);
+      if (vehicleIds.length)
+        await supabaseAdmin.from('vehicles').delete().in('id', vehicleIds);
+      if (driverIds.length)
+        await supabaseAdmin.from('drivers').delete().in('id', driverIds);
 
-      if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
+      if (customerId)
+        await supabaseAdmin.from('customers').delete().eq('id', customerId);
 
       if (companyId) {
-        await supabaseAdmin.from('company_users').delete().eq('company_id', companyId);
-        await supabaseAdmin.from('company_pricing').delete().eq('company_id', companyId);
+        await supabaseAdmin
+          .from('company_users')
+          .delete()
+          .eq('company_id', companyId);
+        await supabaseAdmin
+          .from('company_pricing')
+          .delete()
+          .eq('company_id', companyId);
         await supabaseAdmin.from('companies').delete().eq('id', companyId);
       }
 
-      for (const uid of driverUserIds) await supabaseAdmin.auth.admin.deleteUser(uid);
-      if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+      for (const uid of driverUserIds)
+        await supabaseAdmin.auth.admin.deleteUser(uid);
+      if (customerUserId)
+        await supabaseAdmin.auth.admin.deleteUser(customerUserId);
       if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
     } catch (e) {
       console.error('Cleanup error:', e);
@@ -208,10 +234,14 @@ describe('Matching E2E (ride -> match)', () => {
 
   it('should match nearby drivers sorted by distance', async () => {
     const res = await request(app.getHttpServer())
-      .post(`/api/v1/announcements/${announcementId}/match?radius_meters=5000&limit=10`)
+      .post(
+        `/api/v1/announcements/${announcementId}/match?radius_meters=5000&limit=10`,
+      )
       .expect((r) => {
         if (![200, 201].includes(r.status)) {
-          throw new Error(`Unexpected status ${r.status}: ${JSON.stringify(r.body)}`);
+          throw new Error(
+            `Unexpected status ${r.status}: ${JSON.stringify(r.body)}`,
+          );
         }
       });
 
@@ -220,7 +250,9 @@ describe('Matching E2E (ride -> match)', () => {
 
     const matches = res.body.matches as Array<{ distance_meters: number }>;
     expect(matches.length).toBeGreaterThanOrEqual(2);
-    expect(matches[0].distance_meters).toBeLessThanOrEqual(matches[1].distance_meters);
+    expect(matches[0].distance_meters).toBeLessThanOrEqual(
+      matches[1].distance_meters,
+    );
     expect(matches[0].distance_meters).toBeLessThanOrEqual(5000);
   });
 });

@@ -41,7 +41,8 @@ describe('Push Notifications (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     // Force mock push provider
     process.env.PUSH_PROVIDER = 'mock';
@@ -71,17 +72,22 @@ describe('Push Notifications (e2e)', () => {
     // Owner user
     {
       const email = `owner-notif-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
 
       const { data: prof, error: profErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ user_id: ownerUserId, full_name: 'Owner Notif', role: 'company' })
+        .insert({
+          user_id: ownerUserId,
+          full_name: 'Owner Notif',
+          role: 'company',
+        })
         .select('id')
         .single();
       if (profErr) throw profErr;
@@ -109,17 +115,22 @@ describe('Push Notifications (e2e)', () => {
     // Customer user
     {
       const email = `customer-notif-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customerUserId = u.user.id;
 
       const { data: prof, error: profErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ user_id: customerUserId, full_name: 'Customer Notif', role: 'customer' })
+        .insert({
+          user_id: customerUserId,
+          full_name: 'Customer Notif',
+          role: 'customer',
+        })
         .select('id')
         .single();
       if (profErr) throw profErr;
@@ -136,17 +147,22 @@ describe('Push Notifications (e2e)', () => {
     // Driver user
     {
       const email = `driver-notif-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       driverUserId = u.user.id;
 
       const { data: prof, error: profErr } = await supabaseAdmin
         .from('profiles')
-        .insert({ user_id: driverUserId, full_name: 'Driver Notif', role: 'driver' })
+        .insert({
+          user_id: driverUserId,
+          full_name: 'Driver Notif',
+          role: 'driver',
+        })
         .select('id')
         .single();
       if (profErr) throw profErr;
@@ -190,23 +206,37 @@ describe('Push Notifications (e2e)', () => {
   afterAll(async () => {
     // Clean up test data
     if (createdTokenIds.length) {
-      await supabaseAdmin.from('user_push_tokens').delete().in('id', createdTokenIds);
+      await supabaseAdmin
+        .from('user_push_tokens')
+        .delete()
+        .in('id', createdTokenIds);
     }
     if (createdShipmentIds.length) {
-      await supabaseAdmin.from('shipments').delete().in('id', createdShipmentIds);
+      await supabaseAdmin
+        .from('shipments')
+        .delete()
+        .in('id', createdShipmentIds);
     }
     if (createdOfferIds.length) {
       await supabaseAdmin.from('offers').delete().in('id', createdOfferIds);
     }
     if (createdAnnouncementIds.length) {
-      await supabaseAdmin.from('announcements').delete().in('id', createdAnnouncementIds);
+      await supabaseAdmin
+        .from('announcements')
+        .delete()
+        .in('id', createdAnnouncementIds);
     }
-    if (vehicleId) await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
-    if (driverId) await supabaseAdmin.from('drivers').delete().eq('id', driverId);
-    if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
-    if (companyId) await supabaseAdmin.from('companies').delete().eq('id', companyId);
+    if (vehicleId)
+      await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
+    if (driverId)
+      await supabaseAdmin.from('drivers').delete().eq('id', driverId);
+    if (customerId)
+      await supabaseAdmin.from('customers').delete().eq('id', customerId);
+    if (companyId)
+      await supabaseAdmin.from('companies').delete().eq('id', companyId);
     if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
-    if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+    if (customerUserId)
+      await supabaseAdmin.auth.admin.deleteUser(customerUserId);
     if (driverUserId) await supabaseAdmin.auth.admin.deleteUser(driverUserId);
 
     await app.close();
@@ -410,7 +440,9 @@ describe('Push Notifications (e2e)', () => {
       expect(notifications[0].title).toBe('Shipment Accepted');
       expect(notifications[0].reference_id).toBe(shipment!.id);
     } else {
-      console.warn('[Test D] Notification row not found (may not be implemented yet)');
+      console.warn(
+        '[Test D] Notification row not found (may not be implemented yet)',
+      );
     }
 
     // Verify audit log (graceful skip)

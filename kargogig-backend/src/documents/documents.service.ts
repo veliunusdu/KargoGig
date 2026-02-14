@@ -68,9 +68,7 @@ export class DocumentsService {
   async createDocument(dto: CreateDocumentDto): Promise<DocumentRow> {
     const doc = await this.repository.create(dto);
 
-    this.logger.log(
-      `Document registered: id=${doc.id} path=${dto.file_url}`,
-    );
+    this.logger.log(`Document registered: id=${doc.id} path=${dto.file_url}`);
 
     return doc;
   }

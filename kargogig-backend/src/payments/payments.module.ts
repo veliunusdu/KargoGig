@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
-import { PaymentsController, MockPaymentController } from './payments.controller';
+import {
+  PaymentsController,
+  MockPaymentController,
+} from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PaymentsRepository } from './payments.repository';
 import { MockPaymentProvider } from './providers/mock.provider';

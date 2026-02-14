@@ -47,10 +47,13 @@ export class RefundsService {
     already_refunded?: boolean;
     error?: string;
   }> {
-    this.logger.log(`[requestFullRefund] payment_id=${paymentId}, idempotency_key=${idempotencyKey}`);
+    this.logger.log(
+      `[requestFullRefund] payment_id=${paymentId}, idempotency_key=${idempotencyKey}`,
+    );
 
     // 1) Find payment
-    const { data: payment, error: findError } = await this.refundsRepository.findPaymentById(paymentId);
+    const { data: payment, error: findError } =
+      await this.refundsRepository.findPaymentById(paymentId);
 
     if (findError || !payment) {
       this.logger.error(`[requestFullRefund] Payment not found: ${paymentId}`);
@@ -59,21 +62,31 @@ export class RefundsService {
 
     // 2) Verify payment is paid
     if (payment.status !== 'paid') {
-      this.logger.warn(`[requestFullRefund] Payment not paid: status=${payment.status}`);
-      throw new ConflictException(`Payment not paid (status: ${payment.status})`);
+      this.logger.warn(
+        `[requestFullRefund] Payment not paid: status=${payment.status}`,
+      );
+      throw new ConflictException(
+        `Payment not paid (status: ${payment.status})`,
+      );
     }
 
     // 3) Verify provider_payment_id exists
     if (!payment.provider_payment_id) {
-      this.logger.error(`[requestFullRefund] Missing provider_payment_id for payment ${paymentId}`);
+      this.logger.error(
+        `[requestFullRefund] Missing provider_payment_id for payment ${paymentId}`,
+      );
       throw new BadRequestException('Missing provider_payment_id');
     }
 
     // 4) Get refund provider
     const refundProvider = this.refundProviderMap[payment.provider];
     if (!refundProvider) {
-      this.logger.error(`[requestFullRefund] Unknown provider: ${payment.provider}`);
-      throw new BadGatewayException(`Unknown payment provider: ${payment.provider}`);
+      this.logger.error(
+        `[requestFullRefund] Unknown provider: ${payment.provider}`,
+      );
+      throw new BadGatewayException(
+        `Unknown payment provider: ${payment.provider}`,
+      );
     }
 
     // 5) Call provider refund API
@@ -102,18 +115,21 @@ export class RefundsService {
         },
       });
 
-      throw new BadGatewayException(`Provider refund failed: ${providerResult.error}`);
+      throw new BadGatewayException(
+        `Provider refund failed: ${providerResult.error}`,
+      );
     }
 
     const providerRefundId = providerResult.providerRefundId!;
 
     // 6) Call RPC: refund_full_for_payment
-    const { data: rpcResult, error: rpcError } = await this.refundsRepository.callRefundFullRpc({
-      p_payment_id: paymentId,
-      p_provider_refund_id: providerRefundId,
-      p_idempotency_key: idempotencyKey,
-      p_reason: reason,
-    });
+    const { data: rpcResult, error: rpcError } =
+      await this.refundsRepository.callRefundFullRpc({
+        p_payment_id: paymentId,
+        p_provider_refund_id: providerRefundId,
+        p_idempotency_key: idempotencyKey,
+        p_reason: reason,
+      });
 
     if (rpcError) {
       this.logger.error(`[requestFullRefund] RPC error: ${rpcError.message}`);
@@ -212,22 +228,31 @@ export class RefundsService {
     );
 
     // 1) Find payment
-    const { data: payment, error: findError } = await this.refundsRepository.findPaymentById(paymentId);
+    const { data: payment, error: findError } =
+      await this.refundsRepository.findPaymentById(paymentId);
 
     if (findError || !payment) {
-      this.logger.error(`[requestPartialRefund] Payment not found: ${paymentId}`);
+      this.logger.error(
+        `[requestPartialRefund] Payment not found: ${paymentId}`,
+      );
       throw new NotFoundException('Payment not found');
     }
 
     // 2) Verify payment is paid
     if (payment.status !== 'paid') {
-      this.logger.warn(`[requestPartialRefund] Payment not paid: status=${payment.status}`);
-      throw new ConflictException(`Payment not paid (status: ${payment.status})`);
+      this.logger.warn(
+        `[requestPartialRefund] Payment not paid: status=${payment.status}`,
+      );
+      throw new ConflictException(
+        `Payment not paid (status: ${payment.status})`,
+      );
     }
 
     // 3) Verify provider_payment_id exists
     if (!payment.provider_payment_id) {
-      this.logger.error(`[requestPartialRefund] Missing provider_payment_id for payment ${paymentId}`);
+      this.logger.error(
+        `[requestPartialRefund] Missing provider_payment_id for payment ${paymentId}`,
+      );
       throw new BadRequestException('Missing provider_payment_id');
     }
 
@@ -239,8 +264,12 @@ export class RefundsService {
     // 5) Get refund provider
     const refundProvider = this.refundProviderMap[payment.provider];
     if (!refundProvider) {
-      this.logger.error(`[requestPartialRefund] Unknown provider: ${payment.provider}`);
-      throw new BadGatewayException(`Unknown payment provider: ${payment.provider}`);
+      this.logger.error(
+        `[requestPartialRefund] Unknown provider: ${payment.provider}`,
+      );
+      throw new BadGatewayException(
+        `Unknown payment provider: ${payment.provider}`,
+      );
     }
 
     // 6) Call provider refund API
@@ -270,27 +299,34 @@ export class RefundsService {
         },
       });
 
-      throw new BadGatewayException(`Provider refund failed: ${providerResult.error}`);
+      throw new BadGatewayException(
+        `Provider refund failed: ${providerResult.error}`,
+      );
     }
 
     const providerRefundId = providerResult.providerRefundId!;
 
     // 7) Call RPC: refund_partial_for_payment
-    const { data: rpcResult, error: rpcError } = await this.refundsRepository.callRefundPartialRpc({
-      p_payment_id: paymentId,
-      p_amount_gross: amount,
-      p_provider_refund_id: providerRefundId,
-      p_idempotency_key: idempotencyKey,
-      p_reason: reason,
-    });
+    const { data: rpcResult, error: rpcError } =
+      await this.refundsRepository.callRefundPartialRpc({
+        p_payment_id: paymentId,
+        p_amount_gross: amount,
+        p_provider_refund_id: providerRefundId,
+        p_idempotency_key: idempotencyKey,
+        p_reason: reason,
+      });
 
     if (rpcError) {
-      this.logger.error(`[requestPartialRefund] RPC error: ${rpcError.message}`);
+      this.logger.error(
+        `[requestPartialRefund] RPC error: ${rpcError.message}`,
+      );
       throw new BadGatewayException(`RPC error: ${rpcError.message}`);
     }
 
     if (!rpcResult.ok) {
-      this.logger.error(`[requestPartialRefund] RPC failed: ${rpcResult.error}`);
+      this.logger.error(
+        `[requestPartialRefund] RPC failed: ${rpcResult.error}`,
+      );
 
       await this.refundsRepository.insertAuditLog({
         action: 'REFUND_FAILED',
