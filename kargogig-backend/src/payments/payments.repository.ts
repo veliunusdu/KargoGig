@@ -103,7 +103,9 @@ export class PaymentsRepository {
       callback_payload?: any;
     },
   ): Promise<{ data: Payment | null; error: Error | null }> {
-    this.logger.log(`[updatePaymentStatus] payment_id=${id}, status=${updates.status}`);
+    this.logger.log(
+      `[updatePaymentStatus] payment_id=${id}, status=${updates.status}`,
+    );
 
     const { data, error } = await this.serviceClient
       .from('payments')
@@ -165,7 +167,9 @@ export class PaymentsRepository {
     if (error) {
       // 23505 = unique_violation → duplicate event, not a real error
       if (error.code === '23505') {
-        this.logger.log(`[insertProviderEvent] Duplicate event_key=${event.event_key}`);
+        this.logger.log(
+          `[insertProviderEvent] Duplicate event_key=${event.event_key}`,
+        );
       } else {
         this.logger.error(`[insertProviderEvent] Error: ${error.message}`);
       }
@@ -183,7 +187,9 @@ export class PaymentsRepository {
     entity_id: number | null;
     meta?: any;
   }): Promise<void> {
-    this.logger.log(`[insertAuditLog] action=${log.action}, entity_id=${log.entity_id}`);
+    this.logger.log(
+      `[insertAuditLog] action=${log.action}, entity_id=${log.entity_id}`,
+    );
 
     const { error } = await this.serviceClient.from('audit_logs').insert({
       action: log.action,

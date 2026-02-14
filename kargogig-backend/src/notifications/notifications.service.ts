@@ -31,7 +31,8 @@ export class NotificationsService {
   ) {
     // Use mock provider in test/dev, Expo in production
     const provider = process.env.PUSH_PROVIDER || 'mock';
-    this.pushProvider = provider === 'expo' ? expoPushGateway : mockPushProvider;
+    this.pushProvider =
+      provider === 'expo' ? expoPushGateway : mockPushProvider;
     this.logger.log(`[NotificationsService] Using push provider: ${provider}`);
   }
 
@@ -44,7 +45,9 @@ export class NotificationsService {
     platform: 'android' | 'ios' | 'web',
     deviceId?: string,
   ): Promise<{ ok: boolean; error?: string }> {
-    this.logger.log(`[registerPushToken] user_id=${userId}, platform=${platform}`);
+    this.logger.log(
+      `[registerPushToken] user_id=${userId}, platform=${platform}`,
+    );
 
     const { data, error } = await this.notificationsRepository.upsertPushToken(
       userId,
@@ -84,17 +87,20 @@ export class NotificationsService {
     }
 
     // 2) Insert notification row (audit trail)
-    const { error: notifError } = await this.notificationsRepository.insertNotification({
-      user_id: userId,
-      type,
-      title,
-      message,
-      reference_type: data?.reference_type,
-      reference_id: data?.reference_id,
-    });
+    const { error: notifError } =
+      await this.notificationsRepository.insertNotification({
+        user_id: userId,
+        type,
+        title,
+        message,
+        reference_type: data?.reference_type,
+        reference_id: data?.reference_id,
+      });
 
     if (notifError) {
-      this.logger.error(`[notifyCustomer] Failed to insert notification: ${notifError.message}`);
+      this.logger.error(
+        `[notifyCustomer] Failed to insert notification: ${notifError.message}`,
+      );
     }
 
     // 3) Fetch active push tokens
@@ -102,7 +108,9 @@ export class NotificationsService {
       await this.notificationsRepository.getActiveTokensByUserId(userId);
 
     if (tokensError || tokens.length === 0) {
-      this.logger.warn(`[notifyCustomer] No active tokens for user_id=${userId}`);
+      this.logger.warn(
+        `[notifyCustomer] No active tokens for user_id=${userId}`,
+      );
       return { ok: true, sent: 0 };
     }
 
@@ -115,7 +123,9 @@ export class NotificationsService {
 
     // 5) Mark invalid tokens as inactive
     if (result.invalidTokens.length > 0) {
-      await this.notificationsRepository.markTokensInactive(result.invalidTokens);
+      await this.notificationsRepository.markTokensInactive(
+        result.invalidTokens,
+      );
     }
 
     // 6) Audit log
@@ -160,17 +170,20 @@ export class NotificationsService {
     }
 
     // 2) Insert notification row
-    const { error: notifError } = await this.notificationsRepository.insertNotification({
-      user_id: userId,
-      type,
-      title,
-      message,
-      reference_type: data?.reference_type,
-      reference_id: data?.reference_id,
-    });
+    const { error: notifError } =
+      await this.notificationsRepository.insertNotification({
+        user_id: userId,
+        type,
+        title,
+        message,
+        reference_type: data?.reference_type,
+        reference_id: data?.reference_id,
+      });
 
     if (notifError) {
-      this.logger.error(`[notifyDriver] Failed to insert notification: ${notifError.message}`);
+      this.logger.error(
+        `[notifyDriver] Failed to insert notification: ${notifError.message}`,
+      );
     }
 
     // 3) Fetch active push tokens
@@ -191,7 +204,9 @@ export class NotificationsService {
 
     // 5) Mark invalid tokens as inactive
     if (result.invalidTokens.length > 0) {
-      await this.notificationsRepository.markTokensInactive(result.invalidTokens);
+      await this.notificationsRepository.markTokensInactive(
+        result.invalidTokens,
+      );
     }
 
     // 6) Audit log
@@ -217,7 +232,11 @@ export class NotificationsService {
   /**
    * Shipment accepted hook (notifies customer + driver).
    */
-  async onShipmentAccepted(shipmentId: number, customerId: number, driverId: number): Promise<void> {
+  async onShipmentAccepted(
+    shipmentId: number,
+    customerId: number,
+    driverId: number,
+  ): Promise<void> {
     this.logger.log(`[onShipmentAccepted] shipment_id=${shipmentId}`);
 
     // Notify customer
@@ -242,7 +261,10 @@ export class NotificationsService {
   /**
    * Shipment arrived hook (driver arrived at pickup).
    */
-  async onShipmentArrived(shipmentId: number, customerId: number): Promise<void> {
+  async onShipmentArrived(
+    shipmentId: number,
+    customerId: number,
+  ): Promise<void> {
     this.logger.log(`[onShipmentArrived] shipment_id=${shipmentId}`);
 
     await this.notifyCustomer(
@@ -257,7 +279,10 @@ export class NotificationsService {
   /**
    * Shipment started hook (cargo picked up).
    */
-  async onShipmentStarted(shipmentId: number, customerId: number): Promise<void> {
+  async onShipmentStarted(
+    shipmentId: number,
+    customerId: number,
+  ): Promise<void> {
     this.logger.log(`[onShipmentStarted] shipment_id=${shipmentId}`);
 
     await this.notifyCustomer(
@@ -272,7 +297,10 @@ export class NotificationsService {
   /**
    * Shipment completed hook (cargo delivered).
    */
-  async onShipmentCompleted(shipmentId: number, customerId: number): Promise<void> {
+  async onShipmentCompleted(
+    shipmentId: number,
+    customerId: number,
+  ): Promise<void> {
     this.logger.log(`[onShipmentCompleted] shipment_id=${shipmentId}`);
 
     await this.notifyCustomer(
@@ -287,8 +315,14 @@ export class NotificationsService {
   /**
    * Shipment cancelled hook (driver or customer cancelled).
    */
-  async onShipmentCancelled(shipmentId: number, customerId: number, reason?: string): Promise<void> {
-    this.logger.log(`[onShipmentCancelled] shipment_id=${shipmentId}, reason=${reason}`);
+  async onShipmentCancelled(
+    shipmentId: number,
+    customerId: number,
+    reason?: string,
+  ): Promise<void> {
+    this.logger.log(
+      `[onShipmentCancelled] shipment_id=${shipmentId}, reason=${reason}`,
+    );
 
     await this.notifyCustomer(
       customerId,

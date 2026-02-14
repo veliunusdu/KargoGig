@@ -30,7 +30,10 @@ export function mapRpcErrorToHttp(error: PostgrestError | null): HttpException {
   const hint = error.hint?.toLowerCase() ?? '';
 
   // 401 Unauthorized
-  if (msg.includes('not authenticated') || msg.includes('authentication required')) {
+  if (
+    msg.includes('not authenticated') ||
+    msg.includes('authentication required')
+  ) {
     return new UnauthorizedException(error.message);
   }
 

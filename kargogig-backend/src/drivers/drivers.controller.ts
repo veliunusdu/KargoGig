@@ -62,8 +62,12 @@ export class DriversController {
    * Get all drivers for a company
    */
   @Get('company')
-  async getDriversByCompany(@Query('companyId', ParseIntPipe) companyId: number) {
-    this.logger.log(`[GET /drivers/company] Fetching drivers for company: ${companyId}`);
+  async getDriversByCompany(
+    @Query('companyId', ParseIntPipe) companyId: number,
+  ) {
+    this.logger.log(
+      `[GET /drivers/company] Fetching drivers for company: ${companyId}`,
+    );
     return this.driversService.getDriversByCompany(companyId);
   }
 
@@ -146,7 +150,9 @@ export class DriversController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { is_available: boolean },
   ) {
-    this.logger.log(`[PATCH /drivers/${id}/availability] Setting availability: ${body.is_available}`);
+    this.logger.log(
+      `[PATCH /drivers/${id}/availability] Setting availability: ${body.is_available}`,
+    );
     return this.driversService.setAvailability(id, body.is_available);
   }
 
@@ -161,12 +167,11 @@ export class DriversController {
    */
   @Post('go-online')
   @HttpCode(HttpStatus.OK)
-  async goOnline(
-    @Body() dto: GoOnlineDto,
-    @Req() req: any,
-  ) {
+  async goOnline(@Body() dto: GoOnlineDto, @Req() req: any) {
     const authHeader = req.headers['authorization'] as string | undefined;
-    this.logger.log(`[POST /drivers/go-online] device_type=${dto.device_type || 'unknown'}`);
+    this.logger.log(
+      `[POST /drivers/go-online] device_type=${dto.device_type || 'unknown'}`,
+    );
     return this.driversService.goOnline(authHeader, dto);
   }
 
@@ -177,12 +182,11 @@ export class DriversController {
    */
   @Post('go-offline')
   @HttpCode(HttpStatus.OK)
-  async goOffline(
-    @Body() dto: GoOfflineDto,
-    @Req() req: any,
-  ) {
+  async goOffline(@Body() dto: GoOfflineDto, @Req() req: any) {
     const authHeader = req.headers['authorization'] as string | undefined;
-    this.logger.log(`[POST /drivers/go-offline] device_type=${dto.device_type || 'unknown'}`);
+    this.logger.log(
+      `[POST /drivers/go-offline] device_type=${dto.device_type || 'unknown'}`,
+    );
     return this.driversService.goOffline(authHeader, dto);
   }
 }

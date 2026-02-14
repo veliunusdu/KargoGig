@@ -39,7 +39,7 @@ describe('Driver Sessions (e2e)', () => {
       password,
     });
     if (error) throw error;
-    return data.session!.access_token;
+    return data.session.access_token;
   }
 
   /**
@@ -59,8 +59,8 @@ describe('Driver Sessions (e2e)', () => {
     if (STRICT_MODE) {
       throw new Error(
         `[E2E_STRICT_DB] RPC '${rpcName}' not found in database.\n` +
-        `Deploy the SQL function before running strict E2E.\n` +
-        `Response: ${msg}`,
+          `Deploy the SQL function before running strict E2E.\n` +
+          `Response: ${msg}`,
       );
     }
     console.warn(
@@ -72,7 +72,8 @@ describe('Driver Sessions (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -98,22 +99,26 @@ describe('Driver Sessions (e2e)', () => {
     // Owner user
     {
       const email = `owner-sessions-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
 
     // Company via RPC
     {
-      const { data: newCompanyId, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-Sessions-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: newCompanyId, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-Sessions-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = newCompanyId;
     }
@@ -121,11 +126,12 @@ describe('Driver Sessions (e2e)', () => {
     // Driver 1 (approved)
     {
       const email = `driver-sessions-${Date.now()}_1@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       driverUserId = u.user.id;
@@ -152,11 +158,12 @@ describe('Driver Sessions (e2e)', () => {
     // Driver 2 (not approved)
     {
       const email = `driver-sessions-${Date.now()}_2@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
 
       driver2UserId = u.user.id;
@@ -183,11 +190,12 @@ describe('Driver Sessions (e2e)', () => {
     // Regular user (not a driver)
     {
       const email = `regular-sessions-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       regularUserId = u.user.id;
       regularToken = await getToken(email, password);
@@ -197,11 +205,17 @@ describe('Driver Sessions (e2e)', () => {
   afterAll(async () => {
     // Cleanup
     if (driverId) {
-      await supabaseAdmin.from('driver_sessions').delete().eq('driver_id', driverId);
+      await supabaseAdmin
+        .from('driver_sessions')
+        .delete()
+        .eq('driver_id', driverId);
       await supabaseAdmin.from('drivers').delete().eq('id', driverId);
     }
     if (driver2Id) {
-      await supabaseAdmin.from('driver_sessions').delete().eq('driver_id', driver2Id);
+      await supabaseAdmin
+        .from('driver_sessions')
+        .delete()
+        .eq('driver_id', driver2Id);
       await supabaseAdmin.from('drivers').delete().eq('id', driver2Id);
     }
     if (companyId) {

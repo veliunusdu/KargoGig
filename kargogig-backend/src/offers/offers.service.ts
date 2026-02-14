@@ -138,7 +138,11 @@ export class OffersService {
       if (shipment && shipment.customer_id && shipment.driver_id) {
         // Async notification (don't block response)
         this.notificationsService
-          .onShipmentAccepted(shipment.id, shipment.customer_id, shipment.driver_id)
+          .onShipmentAccepted(
+            shipment.id,
+            shipment.customer_id,
+            shipment.driver_id,
+          )
           .catch((err) => {
             console.error('[OffersService] Notification failed:', err);
           });

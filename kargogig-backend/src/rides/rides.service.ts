@@ -69,6 +69,11 @@ type CompleteRideResult = {
 @Injectable()
 export class RidesService {
   private readonly DEFAULT_NEXT_WAVE_LIMIT = 5;
+  private readonly pricingCache = new Map<
+    number,
+    { data: CompanyPricingRow; timestamp: number }
+  >();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(
     private readonly supabase: SupabaseService,
@@ -119,29 +124,38 @@ export class RidesService {
     }
 
     // 2) Pricing (active, newest)
-    const sb = this.supabase.admin();
+    const now = Date.now();
+    const cached = this.pricingCache.get(dto.companyId);
+    let p: CompanyPricingRow;
 
-    const { data, error } = await sb
-      .from('company_pricing')
-      .select('currency,base_fare,per_km,per_minute,minimum_fare')
-      .eq('company_id', dto.companyId)
-      .eq('is_active', true)
-      .order('effective_from', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
+      p = cached.data;
+    } else {
+      const sb = this.supabase.admin();
 
-    if (error) {
-      throw new InternalServerErrorException(
-        `Pricing fetch error: ${error.message}`,
-      );
+      const { data, error } = await sb
+        .from('company_pricing')
+        .select('currency,base_fare,per_km,per_minute,minimum_fare')
+        .eq('company_id', dto.companyId)
+        .eq('is_active', true)
+        .order('effective_from', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw new InternalServerErrorException(
+          `Pricing fetch error: ${error.message}`,
+        );
+      }
+      if (!data) {
+        throw new BadRequestException(
+          `company_pricing bulunamadı (company_id=${dto.companyId})`,
+        );
+      }
+
+      p = data as CompanyPricingRow;
+      this.pricingCache.set(dto.companyId, { data: p, timestamp: now });
     }
-    if (!data) {
-      throw new BadRequestException(
-        `company_pricing bulunamadı (company_id=${dto.companyId})`,
-      );
-    }
-
-    const p = data as CompanyPricingRow;
 
     const baseFare = this.toNumber(p.base_fare, 0);
     const perKm = this.toNumber(p.per_km, 0);
@@ -269,7 +283,8 @@ export class RidesService {
 
     // Notification: Driver arrived at pickup
     try {
-      const { data: shipment } = await this.supabase.getClient()
+      const { data: shipment } = await this.supabase
+        .getClient()
         .from('shipments')
         .select('customer_id')
         .eq('id', shipmentId)
@@ -278,7 +293,9 @@ export class RidesService {
       if (shipment?.customer_id) {
         this.notificationsService
           .onShipmentArrived(shipmentId, shipment.customer_id)
-          .catch((err) => console.error('[RidesService] Notification failed:', err));
+          .catch((err) =>
+            console.error('[RidesService] Notification failed:', err),
+          );
       }
     } catch (notifError) {
       console.error('[RidesService] Failed to send notification:', notifError);
@@ -319,7 +336,8 @@ export class RidesService {
 
     // Notification: Cargo picked up
     try {
-      const { data: shipment } = await this.supabase.getClient()
+      const { data: shipment } = await this.supabase
+        .getClient()
         .from('shipments')
         .select('customer_id')
         .eq('id', shipmentId)
@@ -328,7 +346,9 @@ export class RidesService {
       if (shipment?.customer_id) {
         this.notificationsService
           .onShipmentStarted(shipmentId, shipment.customer_id)
-          .catch((err) => console.error('[RidesService] Notification failed:', err));
+          .catch((err) =>
+            console.error('[RidesService] Notification failed:', err),
+          );
       }
     } catch (notifError) {
       console.error('[RidesService] Failed to send notification:', notifError);
@@ -413,7 +433,8 @@ export class RidesService {
 
     // Notification: Cargo delivered
     try {
-      const { data: shipment } = await this.supabase.getClient()
+      const { data: shipment } = await this.supabase
+        .getClient()
         .from('shipments')
         .select('customer_id')
         .eq('id', shipmentId)
@@ -422,7 +443,9 @@ export class RidesService {
       if (shipment?.customer_id) {
         this.notificationsService
           .onShipmentCompleted(shipmentId, shipment.customer_id)
-          .catch((err) => console.error('[RidesService] Notification failed:', err));
+          .catch((err) =>
+            console.error('[RidesService] Notification failed:', err),
+          );
       }
     } catch (notifError) {
       console.error('[RidesService] Failed to send notification:', notifError);
@@ -443,7 +466,10 @@ export class RidesService {
     if (!authHeader) {
       throw new UnauthorizedException('Authorization header is required');
     }
-    return this.paymentsService.createCheckoutForShipment(shipmentId, authHeader);
+    return this.paymentsService.createCheckoutForShipment(
+      shipmentId,
+      authHeader,
+    );
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -470,7 +496,9 @@ export class RidesService {
 
     // Validate at least one rating provided
     if (!dto.driver_rating && !dto.company_rating) {
-      throw new BadRequestException('At least one rating (driver or company) is required');
+      throw new BadRequestException(
+        'At least one rating (driver or company) is required',
+      );
     }
 
     // Use user token for RLS
@@ -545,4 +573,3 @@ export class RidesService {
     return { ok: true, inserted };
   }
 }
-

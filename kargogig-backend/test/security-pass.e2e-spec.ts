@@ -19,15 +19,16 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
   const SUPABASE_ANON_KEY = mustEnv('SUPABASE_ANON_KEY');
   const SUPABASE_SERVICE_ROLE_KEY = mustEnv('SUPABASE_SERVICE_ROLE_KEY');
   const DB_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
-  if (!DB_URL) throw new Error('Missing env: SUPABASE_DB_URL (or DATABASE_URL)');
+  if (!DB_URL)
+    throw new Error('Missing env: SUPABASE_DB_URL (or DATABASE_URL)');
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const pool = new Pool({ 
+  const pool = new Pool({
     connectionString: DB_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   });
 
   // ids we create
@@ -63,7 +64,10 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
     const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data, error } = await anon.auth.signInWithPassword({ email, password });
+    const { data, error } = await anon.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
     if (!data.session?.access_token) throw new Error('No access_token');
     return data.session.access_token;
@@ -81,8 +85,14 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
 
     created.driverA.userId = await createUser(created.driverA.email, password);
     created.driverB.userId = await createUser(created.driverB.email, password);
-    created.customer.userId = await createUser(created.customer.email, password);
-    created.adminUser.userId = await createUser(created.adminUser.email, password);
+    created.customer.userId = await createUser(
+      created.customer.email,
+      password,
+    );
+    created.adminUser.userId = await createUser(
+      created.adminUser.email,
+      password,
+    );
 
     // 2) Get JWTs (for RLS)
     created.driverA.jwt = await signIn(created.driverA.email, password);
@@ -96,18 +106,41 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
       await client.query('begin');
 
       // 🔑 Provide auth.uid() context for triggers (e.g., companies -> company_users)
-      await client.query(`select set_config('request.jwt.claim.sub', $1, true);`, [created.adminUser.userId]);
-      await client.query(`select set_config('request.jwt.claim.role', 'authenticated', true);`);
+      await client.query(
+        `select set_config('request.jwt.claim.sub', $1, true);`,
+        [created.adminUser.userId],
+      );
+      await client.query(
+        `select set_config('request.jwt.claim.role', 'authenticated', true);`,
+      );
 
       // 🧹 Clean up any orphaned test data from interrupted previous runs
-      await client.query(`delete from public.customers where user_id in ($1::uuid, $2::uuid, $3::uuid, $4::uuid);`, 
-        [created.driverA.userId, created.driverB.userId, created.customer.userId, created.adminUser.userId]);
-      await client.query(`delete from public.drivers where user_id in ($1::uuid, $2::uuid, $3::uuid, $4::uuid);`, 
-        [created.driverA.userId, created.driverB.userId, created.customer.userId, created.adminUser.userId]);
+      await client.query(
+        `delete from public.customers where user_id in ($1::uuid, $2::uuid, $3::uuid, $4::uuid);`,
+        [
+          created.driverA.userId,
+          created.driverB.userId,
+          created.customer.userId,
+          created.adminUser.userId,
+        ],
+      );
+      await client.query(
+        `delete from public.drivers where user_id in ($1::uuid, $2::uuid, $3::uuid, $4::uuid);`,
+        [
+          created.driverA.userId,
+          created.driverB.userId,
+          created.customer.userId,
+          created.adminUser.userId,
+        ],
+      );
 
       // roles/admin assignment (used by is_admin())
-      await client.query(`insert into public.roles(name) values ('admin') on conflict (name) do nothing;`);
-      const roleRes = await client.query(`select id from public.roles where name='admin' limit 1;`);
+      await client.query(
+        `insert into public.roles(name) values ('admin') on conflict (name) do nothing;`,
+      );
+      const roleRes = await client.query(
+        `select id from public.roles where name='admin' limit 1;`,
+      );
       const adminRoleId = roleRes.rows[0].id;
 
       await client.query(
@@ -255,29 +288,59 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
       await client.query('begin');
 
       // 🔑 Provide auth.uid() context for cleanup triggers/audit
-      await client.query(`select set_config('request.jwt.claim.sub', $1, true);`, [created.adminUser.userId]);
-      await client.query(`select set_config('request.jwt.claim.role', 'authenticated', true);`);
+      await client.query(
+        `select set_config('request.jwt.claim.sub', $1, true);`,
+        [created.adminUser.userId],
+      );
+      await client.query(
+        `select set_config('request.jwt.claim.role', 'authenticated', true);`,
+      );
 
-      await client.query(`delete from public.driver_ratings where shipment_id = $1;`, [created.shipmentId]);
-      await client.query(`delete from public.shipments where id = $1;`, [created.shipmentId]);
-      await client.query(`delete from public.offers where id = $1;`, [created.offerId]);
-      await client.query(`delete from public.announcements where id = $1;`, [created.announcementId]);
+      await client.query(
+        `delete from public.driver_ratings where shipment_id = $1;`,
+        [created.shipmentId],
+      );
+      await client.query(`delete from public.shipments where id = $1;`, [
+        created.shipmentId,
+      ]);
+      await client.query(`delete from public.offers where id = $1;`, [
+        created.offerId,
+      ]);
+      await client.query(`delete from public.announcements where id = $1;`, [
+        created.announcementId,
+      ]);
 
-      await client.query(`delete from public.notifications where id in ($1,$2);`, [created.notifAId, created.notifBId]);
-      await client.query(`delete from public.documents where id in ($1,$2);`, [created.docAId, created.docBId]);
+      await client.query(
+        `delete from public.notifications where id in ($1,$2);`,
+        [created.notifAId, created.notifBId],
+      );
+      await client.query(`delete from public.documents where id in ($1,$2);`, [
+        created.docAId,
+        created.docBId,
+      ]);
 
-      await client.query(`delete from public.drivers where id in ($1,$2);`, [created.driverA.driverId, created.driverB.driverId]);
-      await client.query(`delete from public.customers where id = $1;`, [created.customer.customerId]);
+      await client.query(`delete from public.drivers where id in ($1,$2);`, [
+        created.driverA.driverId,
+        created.driverB.driverId,
+      ]);
+      await client.query(`delete from public.customers where id = $1;`, [
+        created.customer.customerId,
+      ]);
 
       // company + role assignment
-      await client.query(`delete from public.user_role_assignments where user_id = $1::uuid;`, [created.adminUser.userId]);
-      await client.query(`delete from public.companies where id = $1;`, [created.companyId]);
+      await client.query(
+        `delete from public.user_role_assignments where user_id = $1::uuid;`,
+        [created.adminUser.userId],
+      );
+      await client.query(`delete from public.companies where id = $1;`, [
+        created.companyId,
+      ]);
 
       await client.query('commit');
     } catch (e) {
       await client.query('rollback');
       // don't throw on cleanup
-      // eslint-disable-next-line no-console
+
       console.warn('cleanup failed', e);
     } finally {
       client.release();
@@ -295,7 +358,11 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
   });
 
   it('Driver A cannot read Driver B documents (RLS SELECT)', async () => {
-    const driverA = supaAuthed(SUPABASE_URL, SUPABASE_ANON_KEY, created.driverA.jwt);
+    const driverA = supaAuthed(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      created.driverA.jwt,
+    );
 
     // fetch all driver docs visible to Driver A
     const { data, error } = await driverA
@@ -310,13 +377,20 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
     expect(ownerIds).not.toContain(created.driverB.driverId);
 
     // direct attempt to fetch Driver B doc should return empty
-    const res2 = await driverA.from('documents').select('id').eq('id', created.docBId);
+    const res2 = await driverA
+      .from('documents')
+      .select('id')
+      .eq('id', created.docBId);
     expect(res2.error).toBeNull();
     expect((res2.data ?? []).length).toBe(0);
   });
 
   it('Driver cannot self-verify a document (RLS UPDATE / constraints)', async () => {
-    const driverA = supaAuthed(SUPABASE_URL, SUPABASE_ANON_KEY, created.driverA.jwt);
+    const driverA = supaAuthed(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      created.driverA.jwt,
+    );
 
     const { data, error } = await driverA
       .from('documents')
@@ -333,9 +407,15 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
   });
 
   it('Notifications are private + user can mark own as read', async () => {
-    const driverA = supaAuthed(SUPABASE_URL, SUPABASE_ANON_KEY, created.driverA.jwt);
+    const driverA = supaAuthed(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      created.driverA.jwt,
+    );
 
-    const list = await driverA.from('notifications').select('id, user_id, read_at');
+    const list = await driverA
+      .from('notifications')
+      .select('id, user_id, read_at');
     expect(list.error).toBeNull();
 
     const ids = (list.data ?? []).map((r: any) => r.id);
@@ -368,7 +448,11 @@ describe('Day 5 — Security Pass (RLS) интеграцион тест', () => 
   });
 
   it('Customer can insert driver_rating only for delivered shipment that matches driver', async () => {
-    const customer = supaAuthed(SUPABASE_URL, SUPABASE_ANON_KEY, created.customer.jwt);
+    const customer = supaAuthed(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      created.customer.jwt,
+    );
 
     // valid insert (shipment belongs to customer + delivered + driver matches)
     const ok = await customer.from('driver_ratings').insert({

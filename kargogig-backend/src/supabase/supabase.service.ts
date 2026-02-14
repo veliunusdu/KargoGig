@@ -14,7 +14,8 @@ export class SupabaseService {
   constructor(private readonly config: ConfigService) {
     this.url = this.config.get<string>('SUPABASE_URL') ?? '';
     this.anonKey = this.config.get<string>('SUPABASE_ANON_KEY') ?? '';
-    this.serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    this.serviceRoleKey =
+      this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
     // Debug ENV loading (especially for E2E tests)
     console.log('[SUPABASE]', {
@@ -49,10 +50,9 @@ export class SupabaseService {
   }
 
   anonClientWithAuth(authHeaderOrToken: string): SupabaseClient {
-    const header =
-      authHeaderOrToken?.startsWith('Bearer ')
-        ? authHeaderOrToken
-        : `Bearer ${authHeaderOrToken ?? ''}`;
+    const header = authHeaderOrToken?.startsWith('Bearer ')
+      ? authHeaderOrToken
+      : `Bearer ${authHeaderOrToken ?? ''}`;
 
     return createClient(this.url, this.anonKey, {
       global: { headers: { Authorization: header } },

@@ -43,7 +43,8 @@ export class ShopierProvider implements PaymentProvider {
     );
 
     const backendBase = process.env.BACKEND_BASE_URL || 'http://localhost:3000';
-    const frontendBase = process.env.FRONTEND_BASE_URL || 'http://localhost:3001';
+    const frontendBase =
+      process.env.FRONTEND_BASE_URL || 'http://localhost:3001';
 
     // Generate random_nr for signature
     const randomNr = crypto.randomBytes(16).toString('hex');
@@ -159,7 +160,9 @@ export class ShopierProvider implements PaymentProvider {
     );
 
     if (!signatureValid) {
-      this.logger.warn(`[verifyCallback] Invalid signature for ${platform_order_id}`);
+      this.logger.warn(
+        `[verifyCallback] Invalid signature for ${platform_order_id}`,
+      );
       return {
         ok: false,
         platformOrderId: platform_order_id,

@@ -38,7 +38,8 @@ describe('Shopier Callback (e2e)', () => {
   const password = 'password123';
 
   // Shopier test secret — matches SHOPIER_SECRET env var
-  const TEST_SHOPIER_SECRET = process.env.SHOPIER_SECRET || 'test-shopier-secret-key-12345';
+  const TEST_SHOPIER_SECRET =
+    process.env.SHOPIER_SECRET || 'test-shopier-secret-key-12345';
 
   /**
    * Generate a valid Shopier signature for testing.
@@ -161,7 +162,8 @@ describe('Shopier Callback (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     // Force SHOPIER_SECRET for signature tests
     process.env.SHOPIER_SECRET = TEST_SHOPIER_SECRET;
@@ -191,22 +193,26 @@ describe('Shopier Callback (e2e)', () => {
     // Owner user
     {
       const email = `owner-shopier-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       ownerUserId = u.user.id;
     }
 
     // Company
     {
-      const { data: newCompanyId, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-Shopier-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: newCompanyId, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-Shopier-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = newCompanyId;
     }
@@ -214,11 +220,12 @@ describe('Shopier Callback (e2e)', () => {
     // Customer
     {
       const email = `customer-shopier-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customerUserId = u.user.id;
 
@@ -246,11 +253,12 @@ describe('Shopier Callback (e2e)', () => {
     // Driver
     {
       const email = `driver-shopier-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       driverUserId = u.user.id;
 
@@ -308,7 +316,11 @@ describe('Shopier Callback (e2e)', () => {
 
     // Cleanup audit_logs for our payments
     for (const pid of createdPaymentIds) {
-      await supabaseAdmin.from('audit_logs').delete().eq('record_id', pid).eq('table_name', 'payment');
+      await supabaseAdmin
+        .from('audit_logs')
+        .delete()
+        .eq('record_id', pid)
+        .eq('table_name', 'payment');
     }
 
     // Cleanup payments
@@ -328,17 +340,23 @@ describe('Shopier Callback (e2e)', () => {
     }
 
     // Cleanup vehicles → drivers → customers → companies → users
-    if (vehicleId) await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
-    if (driverId) await supabaseAdmin.from('drivers').delete().eq('id', driverId);
-    if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
-    if (companyId) await supabaseAdmin.from('companies').delete().eq('id', companyId);
+    if (vehicleId)
+      await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
+    if (driverId)
+      await supabaseAdmin.from('drivers').delete().eq('id', driverId);
+    if (customerId)
+      await supabaseAdmin.from('customers').delete().eq('id', customerId);
+    if (companyId)
+      await supabaseAdmin.from('companies').delete().eq('id', companyId);
 
     // Delete test users
     for (const uid of [ownerUserId, customerUserId, driverUserId]) {
       if (uid) {
         try {
           await supabaseAdmin.auth.admin.deleteUser(uid);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     }
 
@@ -353,7 +371,12 @@ describe('Shopier Callback (e2e)', () => {
       const totalOrderValue = '150.00';
       const currency = '0'; // TRY
 
-      const sig = generateSignature(randomNr, platformOrderId, totalOrderValue, currency);
+      const sig = generateSignature(
+        randomNr,
+        platformOrderId,
+        totalOrderValue,
+        currency,
+      );
 
       // Manually verify
       const data = `${randomNr}${platformOrderId}${totalOrderValue}${currency}`;
@@ -401,7 +424,12 @@ describe('Shopier Callback (e2e)', () => {
       const currency = '0';
       const providerPaymentId = `SHOP-${Date.now()}`;
 
-      const signature = generateSignature(randomNr, platformOrderId, totalOrderValue, currency);
+      const signature = generateSignature(
+        randomNr,
+        platformOrderId,
+        totalOrderValue,
+        currency,
+      );
 
       const res = await request(app.getHttpServer())
         .post('/api/v1/payments/callback/shopier')
@@ -460,7 +488,11 @@ describe('Shopier Callback (e2e)', () => {
         .from('audit_logs')
         .select('*')
         .eq('record_id', paymentId)
-        .in('action', ['WALLET_CREDITED', 'WALLET_CREDIT_FAILED', 'WALLET_CREDIT_EXCEPTION']);
+        .in('action', [
+          'WALLET_CREDITED',
+          'WALLET_CREDIT_FAILED',
+          'WALLET_CREDIT_EXCEPTION',
+        ]);
 
       // If RPC exists, we should have a wallet audit log
       if (walletAudits && walletAudits.length > 0) {
@@ -479,11 +511,15 @@ describe('Shopier Callback (e2e)', () => {
           expect(walletTxs![0].amount).toBe('250');
         } else {
           // Wallet credit failed/exception — that's okay for test (RPC might not be deployed)
-          console.warn(`⚠️ Wallet credit ${walletAudit.action}: ${JSON.stringify(walletAudit.new_data)}`);
+          console.warn(
+            `⚠️ Wallet credit ${walletAudit.action}: ${JSON.stringify(walletAudit.new_data)}`,
+          );
         }
       } else {
         // No wallet audit — RPC might not exist, warn but don't fail test
-        console.warn('⚠️ No wallet audit log found (RPC might not be deployed yet)');
+        console.warn(
+          '⚠️ No wallet audit log found (RPC might not be deployed yet)',
+        );
       }
     });
   });
@@ -506,7 +542,12 @@ describe('Shopier Callback (e2e)', () => {
       const currency = '0';
       const providerPaymentId = `SHOP-DUP-${Date.now()}`;
 
-      const signature = generateSignature(randomNr, platformOrderId, totalOrderValue, currency);
+      const signature = generateSignature(
+        randomNr,
+        platformOrderId,
+        totalOrderValue,
+        currency,
+      );
 
       const callbackPayload = {
         platform_order_id: platformOrderId,
@@ -637,7 +678,12 @@ describe('Shopier Callback (e2e)', () => {
       const currency = '0';
       const providerPaymentId = `SHOP-FAIL-${Date.now()}`;
 
-      const signature = generateSignature(randomNr, platformOrderId, totalOrderValue, currency);
+      const signature = generateSignature(
+        randomNr,
+        platformOrderId,
+        totalOrderValue,
+        currency,
+      );
 
       const res = await request(app.getHttpServer())
         .post('/api/v1/payments/callback/shopier')

@@ -53,7 +53,7 @@ describe('Ride Pay (e2e)', () => {
       password: pw,
     });
     if (error) throw error;
-    return data.session!.access_token;
+    return data.session.access_token;
   }
 
   /**
@@ -144,7 +144,8 @@ describe('Ride Pay (e2e)', () => {
   beforeAll(async () => {
     const url = process.env.SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    if (!url || !serviceKey) throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey)
+      throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 
     supabaseAdmin = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -179,11 +180,14 @@ describe('Ride Pay (e2e)', () => {
 
     // Company
     {
-      const { data: cid, error } = await supabaseAdmin.rpc('create_company_as_user', {
-        p_user_id: ownerUserId,
-        p_name: `TestCo-RidePay-${Date.now()}`,
-        p_status: 'approved',
-      });
+      const { data: cid, error } = await supabaseAdmin.rpc(
+        'create_company_as_user',
+        {
+          p_user_id: ownerUserId,
+          p_name: `TestCo-RidePay-${Date.now()}`,
+          p_status: 'approved',
+        },
+      );
       if (error) throw error;
       companyId = cid;
     }
@@ -191,11 +195,12 @@ describe('Ride Pay (e2e)', () => {
     // Customer 1 (owner of shipments)
     {
       const email = `customer-ridepay-${Date.now()}_1@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customerUserId = u.user.id;
 
@@ -224,11 +229,12 @@ describe('Ride Pay (e2e)', () => {
     // Customer 2 (unauthorized for shipments)
     {
       const email = `customer-ridepay-${Date.now()}_2@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       customer2UserId = u.user.id;
 
@@ -257,11 +263,12 @@ describe('Ride Pay (e2e)', () => {
     // Driver
     {
       const email = `driver-ridepay-${Date.now()}@test.dev`;
-      const { data: u, error: uErr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+      const { data: u, error: uErr } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
       if (uErr) throw uErr;
       driverUserId = u.user.id;
 
@@ -301,7 +308,10 @@ describe('Ride Pay (e2e)', () => {
   afterAll(async () => {
     // Clean payments first (FK)
     if (shipmentIds.length) {
-      await supabaseAdmin.from('payments').delete().in('shipment_id', shipmentIds);
+      await supabaseAdmin
+        .from('payments')
+        .delete()
+        .in('shipment_id', shipmentIds);
     }
     if (shipmentIds.length) {
       await supabaseAdmin.from('shipments').delete().in('id', shipmentIds);
@@ -310,15 +320,25 @@ describe('Ride Pay (e2e)', () => {
       await supabaseAdmin.from('offers').delete().in('id', offerIds);
     }
     if (announcementIds.length) {
-      await supabaseAdmin.from('announcements').delete().in('id', announcementIds);
+      await supabaseAdmin
+        .from('announcements')
+        .delete()
+        .in('id', announcementIds);
     }
-    if (vehicleId) await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
-    if (driverId) await supabaseAdmin.from('drivers').delete().eq('id', driverId);
-    if (customerId) await supabaseAdmin.from('customers').delete().eq('id', customerId);
-    if (customer2Id) await supabaseAdmin.from('customers').delete().eq('id', customer2Id);
-    if (companyId) await supabaseAdmin.from('companies').delete().eq('id', companyId);
-    if (customerUserId) await supabaseAdmin.auth.admin.deleteUser(customerUserId);
-    if (customer2UserId) await supabaseAdmin.auth.admin.deleteUser(customer2UserId);
+    if (vehicleId)
+      await supabaseAdmin.from('vehicles').delete().eq('id', vehicleId);
+    if (driverId)
+      await supabaseAdmin.from('drivers').delete().eq('id', driverId);
+    if (customerId)
+      await supabaseAdmin.from('customers').delete().eq('id', customerId);
+    if (customer2Id)
+      await supabaseAdmin.from('customers').delete().eq('id', customer2Id);
+    if (companyId)
+      await supabaseAdmin.from('companies').delete().eq('id', companyId);
+    if (customerUserId)
+      await supabaseAdmin.auth.admin.deleteUser(customerUserId);
+    if (customer2UserId)
+      await supabaseAdmin.auth.admin.deleteUser(customer2UserId);
     if (driverUserId) await supabaseAdmin.auth.admin.deleteUser(driverUserId);
     if (ownerUserId) await supabaseAdmin.auth.admin.deleteUser(ownerUserId);
     await app.close();
@@ -332,7 +352,10 @@ describe('Ride Pay (e2e)', () => {
     let platformOrderId: string;
 
     beforeAll(async () => {
-      shipmentId = await createShipment({ status: 'completed', finalPrice: 87.5 });
+      shipmentId = await createShipment({
+        status: 'completed',
+        finalPrice: 87.5,
+      });
     });
 
     it('should create pending payment via /rides/:id/pay', async () => {
@@ -396,7 +419,10 @@ describe('Ride Pay (e2e)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Test B: Shipment not completed', () => {
     it('should reject in_progress shipment', async () => {
-      const sid = await createShipment({ status: 'in_progress', finalPrice: 50 });
+      const sid = await createShipment({
+        status: 'in_progress',
+        finalPrice: 50,
+      });
 
       const res = await request(app.getHttpServer())
         .post(`/api/v1/rides/${sid}/pay`)
@@ -510,7 +536,10 @@ describe('Ride Pay (e2e)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Test C: Pending idempotency', () => {
     it('should return same platform_order_id on repeat calls', async () => {
-      const sid = await createShipment({ status: 'completed', finalPrice: 42.0 });
+      const sid = await createShipment({
+        status: 'completed',
+        finalPrice: 42.0,
+      });
 
       // First pay call
       const res1 = await request(app.getHttpServer())
@@ -545,7 +574,10 @@ describe('Ride Pay (e2e)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Test D: Already paid', () => {
     it('should reject pay after payment is completed', async () => {
-      const sid = await createShipment({ status: 'completed', finalPrice: 60.0 });
+      const sid = await createShipment({
+        status: 'completed',
+        finalPrice: 60.0,
+      });
 
       // Pay
       const payRes = await request(app.getHttpServer())
@@ -578,7 +610,10 @@ describe('Ride Pay (e2e)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Test E: Unauthorized customer', () => {
     it('should reject another customer paying for shipment', async () => {
-      const sid = await createShipment({ status: 'completed', finalPrice: 70.0 });
+      const sid = await createShipment({
+        status: 'completed',
+        finalPrice: 70.0,
+      });
 
       // Customer2 tries to pay for Customer1's shipment
       await request(app.getHttpServer())
@@ -593,7 +628,10 @@ describe('Ride Pay (e2e)', () => {
   // ───────────────────────────────────────────────────────────────
   describe('Test F: Missing auth', () => {
     it('should reject pay without auth header', async () => {
-      const sid = await createShipment({ status: 'completed', finalPrice: 30.0 });
+      const sid = await createShipment({
+        status: 'completed',
+        finalPrice: 30.0,
+      });
 
       await request(app.getHttpServer())
         .post(`/api/v1/rides/${sid}/pay`)
@@ -604,7 +642,10 @@ describe('Ride Pay (e2e)', () => {
       // Delay to avoid Supabase auth rate limiting (429)
       await new Promise((r) => setTimeout(r, 2000));
 
-      const sid = await createShipment({ status: 'completed', finalPrice: 30.0 });
+      const sid = await createShipment({
+        status: 'completed',
+        finalPrice: 30.0,
+      });
 
       const res = await request(app.getHttpServer())
         .post(`/api/v1/rides/${sid}/pay`)

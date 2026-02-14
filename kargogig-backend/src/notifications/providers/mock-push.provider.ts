@@ -25,7 +25,9 @@ export class MockPushProvider implements PushProvider {
 
     // Simulate validation: treat tokens not starting with "ExponentPushToken" as invalid
     const validTokens = tokens.filter((t) => t.startsWith('ExponentPushToken'));
-    const invalidTokens = tokens.filter((t) => !t.startsWith('ExponentPushToken'));
+    const invalidTokens = tokens.filter(
+      (t) => !t.startsWith('ExponentPushToken'),
+    );
 
     return {
       ok: true,

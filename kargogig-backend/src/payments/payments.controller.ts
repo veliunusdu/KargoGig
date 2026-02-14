@@ -49,8 +49,17 @@ export class PaymentsController {
   @Post('callback/:provider')
   @HttpCode(HttpStatus.OK)
   @SkipThrottle()
-  @UsePipes(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true }))
-  async processCallback(@Param('provider') provider: string, @Body() body: any) {
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: false,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  )
+  async processCallback(
+    @Param('provider') provider: string,
+    @Body() body: any,
+  ) {
     this.logger.log(`[POST /payments/callback/${provider}]`);
     return this.paymentsService.processCallback(provider, body);
   }

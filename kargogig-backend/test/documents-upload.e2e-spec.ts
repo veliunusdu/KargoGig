@@ -14,7 +14,9 @@ describe('Documents - Upload URL Test', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
     documentsService = moduleFixture.get<DocumentsService>(DocumentsService);
@@ -38,7 +40,9 @@ describe('Documents - Upload URL Test', () => {
 
     // Assertions
     expect(result.ok).toBe(true);
-    expect(result.path).toMatch(/^company\/1111\/tax_certificate\/[a-f0-9-]+\.pdf$/);
+    expect(result.path).toMatch(
+      /^company\/1111\/tax_certificate\/[a-f0-9-]+\.pdf$/,
+    );
     expect(result.signed_url).toBeDefined();
     expect(result.signed_url).toContain('https://');
   });
@@ -94,7 +98,11 @@ describe('Documents - Upload URL Test', () => {
     console.log('📋 Multiple paths generated:');
     results.forEach((r) => console.log(`  - ${r.path}`));
 
-    expect(results[0].path).toMatch(/^driver\/5555\/drivers_license\/[a-f0-9-]+\.jpg$/);
-    expect(results[1].path).toMatch(/^vehicle\/9999\/insurance\/[a-f0-9-]+\.pdf$/);
+    expect(results[0].path).toMatch(
+      /^driver\/5555\/drivers_license\/[a-f0-9-]+\.jpg$/,
+    );
+    expect(results[1].path).toMatch(
+      /^vehicle\/9999\/insurance\/[a-f0-9-]+\.pdf$/,
+    );
   });
 });

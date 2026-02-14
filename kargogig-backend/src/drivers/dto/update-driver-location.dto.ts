@@ -1,5 +1,10 @@
 import { IsNumber, Min, Max } from 'class-validator';
-import { LAT_MIN, LAT_MAX, LNG_MIN, LNG_MAX } from '../constants/drivers.constants';
+import {
+  LAT_MIN,
+  LAT_MAX,
+  LNG_MIN,
+  LNG_MAX,
+} from '../constants/drivers.constants';
 
 /**
  * DTO for updating driver's own location
