@@ -1,10 +1,11 @@
-import { Body, Controller, Headers, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { RidesService } from './rides.service';
 import { EstimateRideDto } from './dto/estimate-ride.dto';
 import { CustomerCancelDto, DriverCancelDto } from './dto/cancel-ride.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { CompleteRideDto } from './dto/complete-ride.dto';
 import { RateRideDto } from './dto/rate-ride.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 
 @Controller('rides')
@@ -22,6 +23,7 @@ export class RidesController {
    * Requires user's JWT token for auth.uid() to work in RPC.
    */
   @Post(':id/cancel')
+  @UseGuards(JwtAuthGuard)
   async customerCancel(
     @Param('id') id: string,
     @Body() dto: CustomerCancelDto,
@@ -41,6 +43,7 @@ export class RidesController {
    * Requires user's JWT token for auth.uid() to work in RPC.
    */
   @Post(':id/driver-cancel')
+  @UseGuards(JwtAuthGuard)
   async driverCancel(
     @Param('id') id: string,
     @Body() dto: DriverCancelDto,
@@ -60,6 +63,7 @@ export class RidesController {
    * Requires user's JWT token for auth.uid() to work in RPC.
    */
   @Post(':id/arrive')
+  @UseGuards(JwtAuthGuard)
   async arrive(
     @Param('id') id: string,
     @Headers('authorization') authHeader: string,
@@ -75,6 +79,7 @@ export class RidesController {
    * Requires user's JWT token for auth.uid() to work in RPC.
    */
   @Post(':id/start')
+  @UseGuards(JwtAuthGuard)
   async start(
     @Param('id') id: string,
     @Headers('authorization') authHeader: string,
@@ -90,6 +95,7 @@ export class RidesController {
    * Requires user's JWT token for auth.uid() to work in RPC.
    */
   @Post(':id/location')
+  @UseGuards(JwtAuthGuard)
   async updateLocation(
     @Param('id') id: string,
     @Body() dto: UpdateLocationDto,
@@ -111,6 +117,7 @@ export class RidesController {
    * Requires user's JWT token for auth.uid() to work in RPC.
    */
   @Post(':id/complete')
+  @UseGuards(JwtAuthGuard)
   async complete(
     @Param('id') id: string,
     @Body() dto: CompleteRideDto,
@@ -126,6 +133,7 @@ export class RidesController {
    * Requires customer's JWT token.
    */
   @Post(':id/pay')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async pay(
     @Param('id') id: string,
@@ -142,6 +150,7 @@ export class RidesController {
    * Requires customer's JWT token.
    */
   @Post(':id/rate')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async rate(
     @Param('id') id: string,

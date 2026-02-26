@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseService } from '../supabase/supabase.service';
 
 type MatchOptions = {
   radius_meters?: number;
@@ -16,22 +17,10 @@ type AnnouncementForMatch = {
 
 @Injectable()
 export class MatchingService {
-  private readonly supabaseAdmin: SupabaseClient;
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  constructor() {
-    const url = process.env.SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !serviceKey) {
-      // “Tell it like it is”: bu yoksa matching çalışmaz.
-      throw new Error(
-        'Missing env: SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY (required for matching)',
-      );
-    }
-
-    this.supabaseAdmin = createClient(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+  private get supabaseAdmin(): SupabaseClient {
+    return this.supabaseService.serviceClient();
   }
 
   async matchAnnouncement(announcementId: number, opts: MatchOptions = {}) {

@@ -7,9 +7,14 @@ import {
   Req,
   ParseIntPipe,
   Logger,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { RefundsService } from './refunds.service';
 import { RefundRequestDto } from './dto/refund-request.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RefundsRepository } from './refunds.repository';
+import { SupabaseService } from '../supabase/supabase.service';
 
 /**
  * Controller for payment refund operations.
@@ -19,28 +24,44 @@ import { RefundRequestDto } from './dto/refund-request.dto';
 export class RefundsController {
   private readonly logger = new Logger(RefundsController.name);
 
-  constructor(private readonly refundsService: RefundsService) {}
+  constructor(
+    private readonly refundsService: RefundsService,
+    private readonly refundsRepository: RefundsRepository,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   /**
    * POST /payments/:id/refund
    * Request a full or partial refund for a payment.
    */
   @Post(':id/refund')
+  @UseGuards(JwtAuthGuard)
   async requestRefund(
     @Param('id', ParseIntPipe) paymentId: number,
     @Body() body: RefundRequestDto,
     @Req() req: any,
   ) {
+    const userId = req.user.sub;
     this.logger.log(
-      `[requestRefund] payment_id=${paymentId}, type=${body.type}, customer_id=${req.user?.sub}`,
+      `[requestRefund] payment_id=${paymentId}, type=${body.type}, customer_id=${userId}`,
     );
 
-    // TODO: Add JWT auth guard + customer ownership verification
-    // Example:
-    // @UseGuards(JwtAuthGuard)
-    // const customerId = req.user.sub;
-    // const payment = await this.refundsRepository.findPaymentById(paymentId);
-    // if (payment.customer_id !== customerId) throw new ForbiddenException();
+    const result = await this.refundsRepository.findPaymentById(paymentId);
+    const payment = result.data;
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    // Resolve user_id for the customer associated with the payment
+    const { data: customer } = await this.supabaseService.serviceClient()
+      .from('customers')
+      .select('user_id')
+      .eq('id', payment.customer_id)
+      .single();
+
+    if (customer?.user_id !== userId) {
+      throw new ForbiddenException('You do not own this payment');
+    }
 
     if (body.type === 'full') {
       const result = await this.refundsService.requestFullRefund(

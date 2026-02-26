@@ -2,12 +2,12 @@ import {
   Injectable,
   Logger,
   ConflictException,
-  ForbiddenException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { DocumentsRepository, DocumentRow } from './documents.repository';
 import { StorageProvider } from './storage.provider';
+import { SupabaseService } from '../supabase/supabase.service';
 import {
   CreateUploadUrlDto,
   CreateDocumentDto,
@@ -23,18 +23,12 @@ export interface UploadUrlResponse {
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
-  private readonly supabase: any;
 
   constructor(
     private readonly repository: DocumentsRepository,
     private readonly storage: StorageProvider,
-  ) {
-    const { createClient } = require('@supabase/supabase-js');
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
-  }
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   /**
    * Generate a storage path and signed upload URL
@@ -89,7 +83,7 @@ export class DocumentsService {
   ) {
     if (!accessToken) throw new UnauthorizedException('Missing bearer token');
 
-    const { data, error } = await this.supabase.auth.getUser(accessToken);
+    const { data, error } = await this.supabaseService.serviceClient().auth.getUser(accessToken);
     if (error || !data?.user) throw new UnauthorizedException('Invalid token');
 
     const actorUserId = data.user.id; // <-- this is the 'sub' UUID

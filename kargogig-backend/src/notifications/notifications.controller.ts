@@ -4,10 +4,11 @@ import {
   Body,
   Req,
   Logger,
-  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { RegisterPushTokenDto } from './dto/register-push-token.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 /**
  * Controller for push notification token registration.
@@ -24,17 +25,9 @@ export class NotificationsController {
    * Register or update a push token for the authenticated user.
    */
   @Post('push-tokens')
+  @UseGuards(JwtAuthGuard)
   async registerPushToken(@Body() body: RegisterPushTokenDto, @Req() req: any) {
-    // TODO: Add JWT auth guard
-    // @UseGuards(JwtAuthGuard)
-    // const userId = req.user?.sub;
-
-    // Temporary: Extract user ID from request (mock auth for testing)
-    const userId = req.user?.sub || req.headers['x-user-id'];
-
-    if (!userId) {
-      throw new UnauthorizedException('User ID not found');
-    }
+    const userId = req.user.sub;
 
     this.logger.log(
       `[registerPushToken] user_id=${userId}, platform=${body.platform}, token=${body.token.slice(0, 20)}...`,

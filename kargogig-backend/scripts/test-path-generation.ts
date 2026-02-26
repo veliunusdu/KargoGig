@@ -13,8 +13,13 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
 async function testPathGeneration() {
   console.log('🧪 Testing Path Generation\n');
   console.log('='.repeat(60));
+
+  // Mock SupabaseService
+  const mockSupabaseService: any = {
+    serviceClient: () => ({})
+  };
   
-  const storage = new StorageProvider();
+  const storage = new StorageProvider(mockSupabaseService);
   
   // Test 1: Company tax certificate
   console.log('\n📝 Test 1: Company Tax Certificate');

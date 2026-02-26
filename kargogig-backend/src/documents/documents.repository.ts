@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { CreateDocumentDto, UpdateDocumentStatusDto } from './dto';
+import { SupabaseService } from '../supabase/supabase.service';
 
 export interface DocumentRow {
   id: number;
@@ -20,13 +21,11 @@ export interface DocumentRow {
 @Injectable()
 export class DocumentsRepository {
   private readonly logger = new Logger(DocumentsRepository.name);
-  private readonly supabase: SupabaseClient;
 
-  constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+  constructor(private readonly supabaseService: SupabaseService) {}
+
+  private get supabase(): SupabaseClient {
+    return this.supabaseService.serviceClient();
   }
 
   /**
