@@ -1,6 +1,13 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
+import pino from 'pino';
+
+// Optimized asynchronous logger
+const logger = pino({
+  timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
+  base: undefined, // Remove pid and hostname for cleaner logs
+});
 
 /**
  * Request Logger Middleware
@@ -22,7 +29,6 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const ms = Date.now() - start;
       const log = {
-        timestamp: new Date().toISOString(),
         requestId,
         method: req.method,
         path: req.originalUrl,
@@ -32,8 +38,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
         userAgent: req.headers['user-agent'],
       };
 
-      // Structured JSON log - sonra pino/winston ile değiştirilebilir
-      console.log(JSON.stringify(log));
+      logger.info(log);
     });
 
     next();
