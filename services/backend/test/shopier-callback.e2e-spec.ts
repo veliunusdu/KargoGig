@@ -6,6 +6,22 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppModule } from '../src/app.module';
 import * as express from 'express';
 
+/** Retry a Supabase query until data is non-null and passes a predicate (handles PgBouncer read-after-write lag). */
+async function retryQuery<T>(
+  queryFn: () => Promise<{ data: T | null; error: any }>,
+  predicate: (data: T) => boolean = (d) => d != null,
+  retries = 5,
+  delayMs = 600,
+): Promise<T | null> {
+  for (let i = 0; i < retries; i++) {
+    const { data } = await queryFn();
+    if (data != null && predicate(data)) return data;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  const { data } = await queryFn();
+  return data;
+}
+
 /**
  * E2E tests for Shopier payment callback integration (Day 3).
  *
@@ -445,12 +461,15 @@ describe('Shopier Callback (e2e)', () => {
       expect(events![0].signature_valid).toBe(true);
       expect(events![0].status_raw).toBe('success');
 
-      // Verify audit log
-      const { data: audits } = await supabaseAdmin
-        .from('audit_logs')
-        .select('*')
-        .eq('record_id', paymentId)
-        .eq('action', 'PAYMENT_PAID');
+      // Verify audit log (retry to handle PgBouncer read-after-write lag under concurrent load)
+      const audits = await retryQuery(
+        () => supabaseAdmin
+          .from('audit_logs')
+          .select('*')
+          .eq('record_id', paymentId)
+          .eq('action', 'PAYMENT_PAID'),
+        (d: any[]) => d != null && d.length > 0,
+      );
 
       expect(audits).toBeTruthy();
       expect(audits!.length).toBeGreaterThanOrEqual(1);
@@ -476,7 +495,8 @@ describe('Shopier Callback (e2e)', () => {
 
           expect(walletTxs).toBeTruthy();
           expect(walletTxs!.length).toBe(1);
-          expect(walletTxs![0].amount).toBe('250');
+          // Wallet receives net amount after platform commission (default 20%)
+          expect(Number(walletTxs![0].amount)).toBe(200);
         } else {
           // Wallet credit failed/exception — that's okay for test (RPC might not be deployed)
           console.warn(`⚠️ Wallet credit ${walletAudit.action}: ${JSON.stringify(walletAudit.new_data)}`);
@@ -604,13 +624,16 @@ describe('Shopier Callback (e2e)', () => {
 
       expect(payment.status).toBe('pending');
 
-      // Audit log should have SIGNATURE_INVALID
-      const { data: audits } = await supabaseAdmin
-        .from('audit_logs')
-        .select('*')
-        .eq('action', 'SIGNATURE_INVALID')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      // Audit log should have SIGNATURE_INVALID (retry to handle PgBouncer read-after-write lag)
+      const audits = await retryQuery(
+        () => supabaseAdmin
+          .from('audit_logs')
+          .select('*')
+          .eq('action', 'SIGNATURE_INVALID')
+          .order('created_at', { ascending: false })
+          .limit(20),
+        (d: any[]) => d != null && d.some((a: any) => a.new_data?.platform_order_id === platformOrderId),
+      );
 
       const matchingAudit = audits?.find(
         (a: any) => a.new_data?.platform_order_id === platformOrderId,
@@ -666,15 +689,19 @@ describe('Shopier Callback (e2e)', () => {
       expect(payment.status).toBe('failed');
       expect(payment.failure_message).toBeTruthy();
 
-      // Verify audit log
-      const { data: audits } = await supabaseAdmin
-        .from('audit_logs')
-        .select('*')
-        .eq('record_id', paymentId)
-        .eq('action', 'PAYMENT_FAILED');
+      // Verify audit log (with retry for PgBouncer read-after-write lag)
+      const audits = await retryQuery(
+        () => supabaseAdmin
+          .from('audit_logs')
+          .select('*')
+          .eq('record_id', paymentId)
+          .eq('action', 'PAYMENT_FAILED'),
+        (d: any[]) => d != null && d.length > 0,
+      );
 
       expect(audits).toBeTruthy();
       expect(audits!.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
+
