@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { OwnerType, FileExtension } from './dto';
+import { SupabaseService } from '../supabase/supabase.service';
 
 const BUCKET = 'documents';
 
@@ -10,11 +11,8 @@ export class StorageProvider {
   private readonly logger = new Logger(StorageProvider.name);
   private readonly supabase: SupabaseClient;
 
-  constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+  constructor(private readonly supabaseService: SupabaseService) {
+    this.supabase = this.supabaseService.serviceClient();
   }
 
   /**

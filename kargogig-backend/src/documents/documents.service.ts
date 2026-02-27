@@ -6,8 +6,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { DocumentsRepository, DocumentRow } from './documents.repository';
 import { StorageProvider } from './storage.provider';
+import { SupabaseService } from '../supabase/supabase.service';
 import {
   CreateUploadUrlDto,
   CreateDocumentDto,
@@ -23,17 +25,14 @@ export interface UploadUrlResponse {
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
-  private readonly supabase: any;
+  private readonly supabase: SupabaseClient;
 
   constructor(
     private readonly repository: DocumentsRepository,
     private readonly storage: StorageProvider,
+    private readonly supabaseService: SupabaseService,
   ) {
-    const { createClient } = require('@supabase/supabase-js');
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    this.supabase = this.supabaseService.serviceClient();
   }
 
   /**
